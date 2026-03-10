@@ -47,6 +47,12 @@ uint8_t Bus::read(uint16_t address) const{
 
     // reading from the IO Registers
     if(address >= 0xFF00 && address <= 0xFF7F){
+        if(address == 0xFF0F){
+            return IO_registers[address-0xFF00] & 31;
+        }
+        if(address == 0xFFFF){
+            return IO_registers[address-0xFF00] & 31;
+        }
         return IO_registers[address-0xFF00];
     }
 
@@ -55,12 +61,23 @@ uint8_t Bus::read(uint16_t address) const{
         return hram[address-0xFF80];
     }
 
+    // echo ram
+    if(address >= 0xE000 && address <= 0xFDFF){
+        return 0xFF;
+    }
+
+    // not usable area
+    if(address >= 0xFEA0 && address <= 0xFEFF){
+        return 0xFF;
+    }
+
     // reading the IF register 
     if(address == 0xFFFF){
         return IE_Register;
     }
 
-    return 0xFF;
+    std::cout << "Attempted to read at an unknown location: " << (int)address << std::endl;
+    exit(1);
 }
 
 uint16_t Bus::read16(uint16_t address) const{
@@ -113,6 +130,16 @@ void Bus::write(uint16_t address, uint8_t value){
     // writing to the I/O Registers
     if(address >= 0xFF00 && address <= 0xFF7F){
         IO_registers[address-0xFF00] = value;
+
+        if(address == 0xFF02 && value == 0x81){
+            char c = IO_registers[1];
+            std::cout << "x" << c << std::endl;
+        }
+        return;
+    }
+    
+    // not usable
+    if(address >= 0xFEA0 && address <= 0xFEFF){
         return;
     }
 
@@ -128,7 +155,7 @@ void Bus::write(uint16_t address, uint8_t value){
         return;
     }
 
-    std::cout << "Attempted to write at an unknown location: " << std::hex << address << std::endl;
+    std::cout << "Attempted to write at an unknown locatiaon: " <<  (int)address << std::endl;
     exit(1);
 }
 

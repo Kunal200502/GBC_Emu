@@ -365,12 +365,6 @@ uint8_t Cpu::emulateCycle(){
         EI_pending = false;
     }
     uint8_t opcode = bus->read(PC++);
-    std::cout << (int)PC << " Instructions:" << (int)opcode << std::endl;
-    int temp = PC;
-
-    if(opcode != 0){
-        int temp = 0;
-    }
 
     uint8_t IE = bus->read(0xFFFF);
     bool branch = true;
@@ -461,7 +455,7 @@ uint8_t Cpu::emulateCycle(){
 
         case 0x36: {uint16_t HL_address = getHL(); uint8_t value = bus->read(PC++); bus->write(HL_address, value); break;} // LD (HL), d8
         case 0x0A: {uint16_t BC_address = (B << 8) | C; A = bus->read(BC_address); break;} // LD A, (BC)
-        case 0x1A: {uint16_t DE_address = (D << 8) | E; A = bus->read(DE_address); break;} // LD B, (DE)
+        case 0x1A: {uint16_t DE_address = (D << 8) | E; B = bus->read(DE_address); break;} // LD B, (DE)
         case 0xF2: {A = bus->read(0xFF00 + C); break;} // LD A, (C)
         case 0xE2: {bus->write(0xFF00+C, A); break;} // LD (C), A
         case 0xF0: {uint16_t address = 0xFF00+bus->read(PC++); A = bus->read(address); break;} // LD A, (d8)

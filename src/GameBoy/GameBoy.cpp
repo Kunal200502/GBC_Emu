@@ -15,7 +15,6 @@ void GameBoy::startGameboy(MBC1* cart){
         bus->stepTimer(cycles);
         ppu->step(cycles);
         if(ppu->frameBuffer.drawFLag){
-            std::cout << "Draw" << std::endl;
             ppu->frameBuffer.drawFLag = false;
         }
     }

@@ -30,10 +30,9 @@ void Cartridge::loadROM(std::string fileString){
 }
 
 // MBC1 class
-// MBC1::MBC1(){
-//     rom = std::vector<uint8_t>(2097152, 0);
-//     ram = std::vector<uint8_t>(32766, 0);
-// }
+MBC1::MBC1(){
+    ram = std::vector<uint8_t>(32766, 0);
+}
 
 uint8_t MBC1::read(uint16_t address) const{
     // ROM Bank X0 [read-only]
@@ -57,7 +56,7 @@ uint8_t MBC1::read(uint16_t address) const{
         return ram[(address-0xA000) + 0x2000*ram_bank_number];
     }
 
-    std::cout << "Attempted to read from unknow location" << std::endl;
+    std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
     exit(1);
 }
 
@@ -97,9 +96,10 @@ void MBC1::write(uint16_t address, uint8_t value){
     // Writing to the RAM 
     if(address >= 0xA000 && address <= 0xBFFF){
         ram[(address-0xA000) + 0x2000*ram_bank_number] = value;
+        return;
     }
 
-    std::cout << "Attemted to write at an unknown location" << std::endl;
+    std::cout << "Attemted to write at an unknown cartridge location" << (int)address << std::endl;
     exit(1);
 }
 

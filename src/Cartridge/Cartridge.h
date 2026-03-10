@@ -24,7 +24,7 @@ class MBC1: public Cartridge{
         bool banking_mode;
 
     public:
-        // MBC1();
+        MBC1();
         uint8_t read(uint16_t) const;
         void write(uint16_t, uint8_t);
 };
