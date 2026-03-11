@@ -13,6 +13,7 @@ CMakeUserPresets.json
 .vscode
 build
 ROM
+GameBoyDebugger
 
 # CLion
 #  JetBrains specific template is maintained in a separate JetBrains.gitignore that can

@@ -13,8 +13,10 @@ void GameBoy::startGameboy(MBC1* cart){
     while(true){
         int cycles = cpu->emulateCycle();
         bus->stepTimer(cycles);
+
         ppu->step(cycles);
         if(ppu->frameBuffer.drawFLag){
+            // TODO: render
             ppu->frameBuffer.drawFLag = false;
         }
     }

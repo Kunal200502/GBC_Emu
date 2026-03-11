@@ -88,6 +88,8 @@ class Cpu{
 
     void copyBitComplement(uint8_t, uint8_t);
 
+    void daa();
+
     void serviceInterrupt(uint8_t);
     void clearIFBit(uint8_t);
 

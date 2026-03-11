@@ -35,18 +35,27 @@ uint8_t Bus::read(uint16_t address) const{
         return wram[address-0xC000];
     }
 
+    // echo ram (maps to wram, nintendo forbids the use of this area)
+    if(address >= 0xE000 && address <= 0xFDFF){
+        return wram[(address & 0x1FFF)];
+    }
+
     // reading from the OAM
     if(address >= 0xFE00 && address <= 0xFE9F){
         return OAM_memory[address-0xFE00];
     }
 
-    // reading from the timer registers
-    if(address >= 0xFF04 && address <= 0xFF07){
-        return timer.read(address);
+    // not usable area
+    if(address >= 0xFEA0 && address <= 0xFEFF){
+        return 0xFF;
     }
 
     // reading from the IO Registers
     if(address >= 0xFF00 && address <= 0xFF7F){
+        // reading from the timer registers
+        if(address >= 0xFF04 && address <= 0xFF07){
+            return timer.read(address);
+        }
         if(address == 0xFF0F){
             return IO_registers[address-0xFF00] & 31;
         }
@@ -59,16 +68,6 @@ uint8_t Bus::read(uint16_t address) const{
     // reading from the hram
     if(address >= 0xFF80 && address <= 0xFFFE){
         return hram[address-0xFF80];
-    }
-
-    // echo ram
-    if(address >= 0xE000 && address <= 0xFDFF){
-        return 0xFF;
-    }
-
-    // not usable area
-    if(address >= 0xFEA0 && address <= 0xFEFF){
-        return 0xFF;
     }
 
     // reading the IF register 
@@ -112,29 +111,12 @@ void Bus::write(uint16_t address, uint8_t value){
 
     // writing to the ECHO ram
     if(address >= 0xE000 && address <= 0xFDFF){
-        return;
+        wram[address & 0x1FFF] = value;
     }
 
     // writing to the OAM
     if(address >= 0xFE00 && address <= 0xFE9F){
         OAM_memory[address-0xFE00] = value;
-        return;
-    }
-
-    // writing to the timer registers
-    if(address >= 0xFF04 && address <= 0xFF07){
-        timer.write(address, value);
-        return;
-    }
-
-    // writing to the I/O Registers
-    if(address >= 0xFF00 && address <= 0xFF7F){
-        IO_registers[address-0xFF00] = value;
-
-        if(address == 0xFF02 && value == 0x81){
-            char c = IO_registers[1];
-            std::cout << "x" << c << std::endl;
-        }
         return;
     }
     
@@ -143,6 +125,17 @@ void Bus::write(uint16_t address, uint8_t value){
         return;
     }
 
+    // writing to the I/O Registers
+    if(address >= 0xFF00 && address <= 0xFF7F){
+        // writing to the timer registers
+        if(address >= 0xFF04 && address <= 0xFF07){
+            timer.write(address, value);
+            return;
+        }
+        IO_registers[address-0xFF00] = value;
+        return;
+    }
+    
     // writing to the HRAM
     if(address >= 0xFF80 && address <= 0xFFFE){
         hram[address-0xFF80] = value;

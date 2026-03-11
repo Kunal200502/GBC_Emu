@@ -303,6 +303,30 @@ void Cpu::copyBitComplement(uint8_t value, uint8_t bit){
     setN(false);
 }
 
+void Cpu::daa(){
+    uint8_t offset = 0;
+    if(!getN()){
+        if(((A & 0xF) > 0x09) || getH()){
+            offset |= 0x06;
+        }
+        if(A > 0x99 || getC()){
+            offset |= 0x60;
+            setC(true);
+        }
+        A += offset;
+    }else{
+        if(getH()){
+            offset |= 0x06;
+        }
+        if(getC()){
+            offset |= 0x60;
+        }
+        A -= offset;
+    }
+    setH(false);
+    setZ(A == 0);
+}
+
 void Cpu::res(uint8_t& value, uint8_t bit){
     value = value & ~(1 << bit);
 }
@@ -937,10 +961,24 @@ uint8_t Cpu::emulateCycle(){
         case 0xD0: { branch = !getC(); if(branch){ PC = stackPop16(); } break; } // RET NC
         case 0xD8: { branch = getC(); if(branch){ PC = stackPop16(); } break; } // RET C
 
+        case 0xC7: { stackPush16(PC); PC = 0x0000; break; } // RST 0
+        case 0xCF: { stackPush16(PC); PC = 0x0008; break; } // RST 1
+        case 0XD7: { stackPush16(PC); PC = 0x0010; break; } // RST 2
+        case 0xDF: { stackPush16(PC); PC = 0x0018; break; } // RST 3
+        case 0xE7: { stackPush16(PC); PC = 0x0020; break; } // RST 4
+        case 0xEF: { stackPush16(PC); PC = 0x0028; break; } // RST 5
+        case 0xF7: { stackPush16(PC); PC = 0x0030; break; } // RST 6
+        case 0xFF: { stackPush16(PC); PC = 0x0038; break; } // RST 7
 
-        case 0xFB: { EI_pending = true; break; }; // EI
+        case 0x27: { daa(); break; } // DAA
+        case 0x2F: { A = !A; break; } // CPL
+        case 0x3F: { setC(!getC()); setH(false); setN(false); break; } // CCF (flip the carry flag C)
+        case 0x37: { setC(true); setH(false); setN(false); break; } // SCF
+
         case 0xF3: { IME = false; break; }; // DI
-        // 482 opcodes done till here (:
+        case 0xFB: { EI_pending = true; break; }; // EI
+
+        // only HALT and STOP remains
 
         default:
             std::cout << "Unknown opcode" << (int)opcode << std::endl;
