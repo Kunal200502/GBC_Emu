@@ -47,6 +47,7 @@ uint8_t Timer::read(uint16_t address) const{
         case 0xFF06: return timerModulo;
         case 0xFF07: return timerControl;
     }
+    return 0xFF;
 }
 
 void Timer::write(uint16_t address, uint8_t value){

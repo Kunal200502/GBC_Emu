@@ -139,6 +139,7 @@ void Cpu::xorA(uint8_t value){
 }
 
 void Cpu::cpA(uint8_t value){
+    uint8_t temp = value;
     setC(A < value);
     setH((A & 0xF) < (value & 0xF));
     setN(true);
@@ -415,7 +416,7 @@ uint8_t Cpu::emulateCycle(){
 
         case 0x4F: {C = A; break;} // LD C, A
         case 0x48: {C = B; break;} // LD C, B
-        case 0x49: {break;} // LD C, Cbus->write(--SP, A); bus->write(--SP, F)
+        case 0x49: {break;} // LD C, C
         case 0x4A: {C = D; break;} // LD C, D
         case 0x4B: {C = E; break;} // LD C, E
         case 0x4C: {C = H; break;} // LD C, H
@@ -482,7 +483,10 @@ uint8_t Cpu::emulateCycle(){
         case 0x1A: {uint16_t DE_address = (D << 8) | E; B = bus->read(DE_address); break;} // LD B, (DE)
         case 0xF2: {A = bus->read(0xFF00 + C); break;} // LD A, (C)
         case 0xE2: {bus->write(0xFF00+C, A); break;} // LD (C), A
-        case 0xF0: {uint16_t address = 0xFF00+bus->read(PC++); A = bus->read(address); break;} // LD A, (d8)
+        case 0xF0: {
+            uint16_t address = 0xFF00+bus->read(PC++); 
+            A = bus->read(address); 
+            break;} // LD A, (d8)
         case 0xE0: {uint8_t d8 = bus->read(PC++); bus->write(0xFF00+d8, A); break;} // LD (d8), A
         case 0xFA: {uint16_t address = bus->read(PC++) | (bus->read(PC++) << 8); A = bus->read(address); break;} // LD A, (d16);
         case 0xEA: {uint16_t address = bus->read(PC++) | (bus->read(PC++) << 8); bus->write(address, A); break;} // LD (a16), A
@@ -695,7 +699,7 @@ uint8_t Cpu::emulateCycle(){
                 case 0x2B: { sra(E); break; } // SRA E
                 case 0x2C: { sra(H); break; } // SRA H
                 case 0x2D: { sra(L); break; } // SRA L
-                case 0x2E: { uint16_t HL_address = getHL(); uint8_t value = bus->read(HL_address); sla(value); bus->write(HL_address, value); break; } // SRA (HL)
+                case 0x2E: { uint16_t HL_address = getHL(); uint8_t value = bus->read(HL_address); sra(value); bus->write(HL_address, value); break; } // SRA (HL)
 
                 case 0x3F: { srl(A); break; } // SRL A
                 case 0x38: { srl(B); break; } // SRL B

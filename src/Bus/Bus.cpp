@@ -56,12 +56,6 @@ uint8_t Bus::read(uint16_t address) const{
         if(address >= 0xFF04 && address <= 0xFF07){
             return timer.read(address);
         }
-        if(address == 0xFF0F){
-            return IO_registers[address-0xFF00] & 31;
-        }
-        if(address == 0xFFFF){
-            return IO_registers[address-0xFF00] & 31;
-        }
         return IO_registers[address-0xFF00];
     }
 
@@ -112,6 +106,7 @@ void Bus::write(uint16_t address, uint8_t value){
     // writing to the ECHO ram
     if(address >= 0xE000 && address <= 0xFDFF){
         wram[address & 0x1FFF] = value;
+        return;
     }
 
     // writing to the OAM
@@ -127,12 +122,10 @@ void Bus::write(uint16_t address, uint8_t value){
 
     // writing to the I/O Registers
     if(address >= 0xFF00 && address <= 0xFF7F){
-        // writing to the timer registers
-        if(address >= 0xFF04 && address <= 0xFF07){
-            timer.write(address, value);
-            return;
-        }
         IO_registers[address-0xFF00] = value;
+        if(address == 0xFF02 && value == 0x81){
+            std::cout << (int)read(0xFF01) << std::endl;
+        }
         return;
     }
     

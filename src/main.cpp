@@ -10,23 +10,10 @@
 #include <SDL2/SDL.h>
 
 int main(int argc, char** argv){
-    // std::string romFile = argv[1];
+    std::string romFile = argv[1];
 
     MBC1 cart = MBC1();
-    // cart.loadROM(romFile);
-    cart.loadROM("../ROM/cpu_instrs.gb");
-
-    // int temp = cart.read(0x0100);
-
-    // Bus bus;
-    // bus.connectCartridge(&cart);
-
-    // Cpu cpu;
-    // cpu.connectBus(&bus);
-
-    // while(true){
-    //     cpu.emulateCycle();
-    // }
+    cart.loadROM(romFile);
 
     GameBoy gameBoy = GameBoy();
     gameBoy.startGameboy(&cart);

@@ -4,6 +4,7 @@
 #include "../Timer/Timer.h"
 #include "../Cartridge/Cartridge.h"
 #include "../PPU/PPU.h"
+#include "LCDRenderer.h"
 #include <iostream>
 
 class GameBoy{
@@ -11,6 +12,7 @@ class GameBoy{
         Cpu* cpu;
         Bus* bus;
         PPU* ppu;
+        LCD_Renderer* renderer;
 
         GameBoy();
 

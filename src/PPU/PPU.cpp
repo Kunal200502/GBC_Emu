@@ -87,7 +87,7 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
         case GET_TILE: {
             if(switchFetcherState){
                 fetcherState = GET_TILE_DATA_LOW;
-                return;
+                break;
             }
             uint16_t tileMapBase = tileMap ? 0x9C00 : 0x9800;
 
@@ -107,7 +107,7 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
         case GET_TILE_DATA_LOW: {
             if(switchFetcherState){
                 fetcherState = GET_TILE_DATA_HIGH;
-                return;
+                break;
             }
             uint16_t tileAddress;
             uint8_t lineInTile = (getLY() + getSCY())%8;
@@ -124,7 +124,7 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
         case GET_TILE_DATA_HIGH: {
             if(switchFetcherState){
                 fetcherState = SLEEP;
-                return;
+                break;
             }
             uint16_t tileAddress;
             uint8_t lineInTile = (getLY() + getSCY())%8;
@@ -141,7 +141,6 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
         case SLEEP:{
             if(switchFetcherState){
                 fetcherState = GET_TILE;
-                return;
             }
             break;
         }
@@ -212,7 +211,7 @@ void PPU::emulateCycle(){
                 uint8_t newLY = LY+1;
                 bus->write(0xFF44, newLY);
                 
-                if(LY < 143){
+                if(LY <= 143){
                     pixelCol = 0;
                     mode = 2;
                 }else{
@@ -227,6 +226,9 @@ void PPU::emulateCycle(){
         }
         case 1:{
             if(mode1Dots != 4560){
+                if((mode1Dots % 456) == 0){
+                    bus->write(0xFF44, getLY()+1);
+                }
                 mode1Dots++;
                 return;
             }
