@@ -52,7 +52,7 @@ class PPU{
         uint8_t oam_scan_buffer;
         void OAM_scan();
 
-        uint8_t pixelCol = 0;
+        uint16_t pixelCol = 0;
 
         // fetcher logic
         uint16_t mode3Dots = 0;

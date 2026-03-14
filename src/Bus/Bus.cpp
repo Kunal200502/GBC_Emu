@@ -123,9 +123,6 @@ void Bus::write(uint16_t address, uint8_t value){
     // writing to the I/O Registers
     if(address >= 0xFF00 && address <= 0xFF7F){
         IO_registers[address-0xFF00] = value;
-        if(address == 0xFF02 && value == 0x81){
-            std::cout << (int)read(0xFF01) << std::endl;
-        }
         return;
     }
     

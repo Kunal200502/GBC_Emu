@@ -53,6 +53,9 @@ uint8_t MBC1::read(uint16_t address) const{
 
     // RAM Bank 00-03 if any
     if(address >= 0xA000 && address <= 0xBFFF){
+        if(!ram_enabled){
+            return 0xFF;
+        }
         return ram[(address-0xA000) + 0x2000*ram_bank_number];
     }
 
@@ -63,7 +66,7 @@ uint8_t MBC1::read(uint16_t address) const{
 void MBC1::write(uint16_t address, uint8_t value){
     // RAM enable [write only]
     if(address >= 0x0000 && address <= 0x1FFF){
-        if((value & 0xF) == 0x4){
+        if((value & 0xF) == 0xA){
             ram_enabled = true;
         }else{
             ram_enabled = false;
@@ -95,6 +98,9 @@ void MBC1::write(uint16_t address, uint8_t value){
 
     // Writing to the RAM 
     if(address >= 0xA000 && address <= 0xBFFF){
+        if(!ram_enabled){
+            return;
+        }
         ram[(address-0xA000) + 0x2000*ram_bank_number] = value;
         return;
     }

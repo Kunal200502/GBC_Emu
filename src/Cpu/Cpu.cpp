@@ -109,7 +109,7 @@ void Cpu::sbcA(uint8_t value){
     uint8_t result = A - value - carry;
     setZ(result == 0);
     setH((A & 0xF) < ((value & 0xF) + carry));
-    setC(A < value+carry);
+    setC(A < (uint16_t)value+carry);
     setN(true);
     A = result;
 }
@@ -181,8 +181,8 @@ void Cpu::addHL(uint16_t value){
 }
 void Cpu::addSP(int8_t value){
     uint32_t result = SP + value;
-    setH(((SP & 0xFFF) + value) > 0xFFF);
-    setC(result > 0xFFFF);
+    setH(((SP & 0xF) + (value & 0xF)) > 0xF);
+    setC(((SP & 0xFF) + (value & 0xFF)) > 0xFF);
     setN(false);
     setZ(false);
     SP = result & 0xFFFF;
@@ -391,6 +391,14 @@ uint8_t Cpu::emulateCycle(){
     }
     uint8_t opcode = bus->read(PC++);
 
+    // std::cout << std::hex << "PC = " << PC-1 << " opcode = " << (int)opcode << std::endl;
+    // std::cout << std::hex << (int)bus->read(PC) << (int)bus->read(PC+1) << std::endl;
+
+    // if(i == 100){
+    //     std::cout << "reached here" << std::endl;
+    // }
+    // i++;
+
     uint8_t IE = bus->read(0xFFFF);
     bool branch = true;
     uint8_t opcode_cycles = 0;
@@ -480,7 +488,7 @@ uint8_t Cpu::emulateCycle(){
 
         case 0x36: {uint16_t HL_address = getHL(); uint8_t value = bus->read(PC++); bus->write(HL_address, value); break;} // LD (HL), d8
         case 0x0A: {uint16_t BC_address = (B << 8) | C; A = bus->read(BC_address); break;} // LD A, (BC)
-        case 0x1A: {uint16_t DE_address = (D << 8) | E; B = bus->read(DE_address); break;} // LD B, (DE)
+        case 0x1A: {uint16_t DE_address = (D << 8) | E; A = bus->read(DE_address); break;} // LD A, (DE)
         case 0xF2: {A = bus->read(0xFF00 + C); break;} // LD A, (C)
         case 0xE2: {bus->write(0xFF00+C, A); break;} // LD (C), A
         case 0xF0: {
@@ -509,7 +517,7 @@ uint8_t Cpu::emulateCycle(){
         case 0xC1: {C = stackPop8(); B = stackPop8(); break;} // POP BC
         case 0xD1: {E = stackPop8(); D = stackPop8(); break;} // POP DE
         case 0xE1: {L = stackPop8(); H = stackPop8(); break;} // POP HL
-        case 0xF1: {F = stackPop8(); A = stackPop8(); break;} // POP AF  
+        case 0xF1: {F = stackPop8() & 0xF0; A = stackPop8(); break;} // POP AF  
 
         case 0xF8: {
             int8_t offset = bus->read(PC++);
@@ -939,6 +947,7 @@ uint8_t Cpu::emulateCycle(){
                     std::cout << "Unknown opcode" << (int)CB_opcode << std::endl;
                     exit(1);
             }
+            break;
         }
 
         case 0xC3: { PC = bus->read16(PC); break; } // JP a16
@@ -975,7 +984,7 @@ uint8_t Cpu::emulateCycle(){
         case 0xFF: { stackPush16(PC); PC = 0x0038; break; } // RST 7
 
         case 0x27: { daa(); break; } // DAA
-        case 0x2F: { A = !A; break; } // CPL
+        case 0x2F: { A = ~A; break; } // CPL
         case 0x3F: { setC(!getC()); setH(false); setN(false); break; } // CCF (flip the carry flag C)
         case 0x37: { setC(true); setH(false); setN(false); break; } // SCF
 

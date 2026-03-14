@@ -195,9 +195,10 @@ void PPU::emulateCycle(){
             if(popPixel == 0xFF){
                 return;
             }
+
             frameBuffer.push(popPixel);
 
-            if(pixelCol == 160){
+            if(pixelCol >= 160){
                 mode = 0;
             }
 
@@ -225,11 +226,14 @@ void PPU::emulateCycle(){
             break;
         }
         case 1:{
+            uint8_t IF = bus->read(0xFF0F);
+            IF |= 1;
+            bus->write(0xFF0F, IF);
             if(mode1Dots != 4560){
+                mode1Dots++;
                 if((mode1Dots % 456) == 0){
                     bus->write(0xFF44, getLY()+1);
                 }
-                mode1Dots++;
                 return;
             }
             mode1Dots = 0;
