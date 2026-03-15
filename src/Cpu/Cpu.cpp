@@ -385,26 +385,32 @@ void Cpu::serviceInterrupt(uint8_t IF){
 }
 
 uint8_t Cpu::emulateCycle(){
+    uint8_t IE = bus->read(0xFFFF);
+    uint8_t IF = bus->read(0xFF0F);
+    if(halted){
+        if(IF && IE){
+            halted = false;
+            if(IME){
+                serviceInterrupt(IF);
+            }
+        }else{
+            return 0;
+        }
+    }
     if(EI_pending){
         IME = EI_pending;
         EI_pending = false;
     }
     uint8_t opcode = bus->read(PC++);
 
-    // std::cout << std::hex << "PC = " << PC-1 << " opcode = " << (int)opcode << std::endl;
-    // std::cout << std::hex << (int)bus->read(PC) << (int)bus->read(PC+1) << std::endl;
-
-    // if(i == 100){
-    //     std::cout << "reached here" << std::endl;
-    // }
-    // i++;
-
-    uint8_t IE = bus->read(0xFFFF);
     bool branch = true;
     uint8_t opcode_cycles = 0;
 
     switch(opcode){
-        case 0x0:{break;}
+        case 0x00: { break; }
+        case 0xCC: { branch = getZ(); call(branch); break; } // CALL Z
+        case 0xD4: { branch = !getC(); call(branch); break; } // CALL NC
+        case 0xDC: { branch = getC(); call(branch); break; } // CALL C
 
         case 0x7F: { break;} // LD A, A
         case 0x78: {A = B; break;} // LD A, B
@@ -521,11 +527,12 @@ uint8_t Cpu::emulateCycle(){
 
         case 0xF8: {
             int8_t offset = bus->read(PC++);
-            uint32_t result =  SP + offset;
+            uint8_t d8 = offset;
+            uint16_t result =  SP + offset;
             H = (result >> 8) & 0xFF;
             L = (result & 0xFF);
-            setC(result >> 16);
-            setH(((SP & 0xFFF) + (offset & 0xFFF)) >> 12);
+            setC(((SP & 0xFF) + d8) > 0xFF);
+            setH(((SP & 0xF) + (d8 & 0xF)) > 0xF);
             setN(0);
             setZ(0);
             break;
@@ -984,12 +991,17 @@ uint8_t Cpu::emulateCycle(){
         case 0xFF: { stackPush16(PC); PC = 0x0038; break; } // RST 7
 
         case 0x27: { daa(); break; } // DAA
-        case 0x2F: { A = ~A; break; } // CPL
+        case 0x2F: { A = ~A; setH(1); setN(1); break; } // CPL
         case 0x3F: { setC(!getC()); setH(false); setN(false); break; } // CCF (flip the carry flag C)
         case 0x37: { setC(true); setH(false); setN(false); break; } // SCF
 
         case 0xF3: { IME = false; break; }; // DI
         case 0xFB: { EI_pending = true; break; }; // EI
+
+        case 0x76: { halted = true; break; } // HALT
+        case 0x10: {
+            break;
+        }
 
         // only HALT and STOP remains
 
@@ -1003,7 +1015,6 @@ uint8_t Cpu::emulateCycle(){
     // adding clock cycles
     clock += opcode_cycles;
 
-    uint8_t IF = bus->read(0xFF0F);
     if(IME && (IE & IF)){
         serviceInterrupt(IF);
     }

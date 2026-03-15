@@ -23,8 +23,8 @@ class FIFO_Pixel{
 };
 
 class FrameBuffer{
-    uint16_t pointer = 0;
     public:
+    uint16_t pointer = 0;
         bool drawFLag = false;
         std::vector<uint8_t> array;
         FrameBuffer();
@@ -55,6 +55,8 @@ class PPU{
         uint16_t pixelCol = 0;
 
         // fetcher logic
+        uint8_t fetcherX = 0;
+        uint8_t fetcherY = 0;
         uint16_t mode3Dots = 0;
         enum FetcherState fetcherState  = GET_TILE;
         bool switchFetcherState = true;

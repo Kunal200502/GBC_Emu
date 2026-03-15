@@ -21,7 +21,7 @@ void GameBoy::startGameboy(MBC1* cart){
         int cycles = cpu->emulateCycle();
         bus->stepTimer(cycles);
 
-        ppu->step(cycles);
+        ppu->step(4*cycles);
         if(ppu->frameBuffer.drawFLag){
             renderer->drawFrame(ppu->frameBuffer.array);
             ppu->frameBuffer.drawFLag = false;

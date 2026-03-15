@@ -6,6 +6,7 @@
 #include "../Bus/Bus.h"
 
 class Cpu{
+    bool halted = false;
     uint8_t i = 0;
     // constants
     const uint32_t CLOCK_FREQUENCY = 4194304; 

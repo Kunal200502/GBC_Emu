@@ -56,15 +56,15 @@ uint8_t PPU::getSTAT(){
 }
 
 uint8_t PPU::getSCX(){
-    return bus->read(0xFF42);
+    return bus->read(0xFF43);
 }
 uint8_t PPU::getSCY(){
     return bus->read(0xFF43);
 }
-uint8_t PPU::getWX(){
+uint8_t PPU::getWY(){
     return bus->read(0xFF4A);
 }
-uint8_t PPU::getWY(){
+uint8_t PPU::getWX(){
     return bus->read(0xFF4B);
 }
 
@@ -85,20 +85,23 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
     switchFetcherState = !switchFetcherState;
     switch(fetcherState){
         case GET_TILE: {
+            // std::cout << (int)fetcherX << std::endl;
             if(switchFetcherState){
                 fetcherState = GET_TILE_DATA_LOW;
                 break;
             }
             uint16_t tileMapBase = tileMap ? 0x9C00 : 0x9800;
 
+            fetcherY = getLY();
+
             uint8_t tileY;
             uint8_t tileX;
             if(windowTile){
-                tileY = getLY()/8;
+                tileY = fetcherY/8;
                 tileX = pixelCol/8;
             }else{
-                tileY = (getLY() + getSCY())/8;
-                tileX = (pixelCol+getSCX())/8;
+                tileY = ((fetcherY + getSCY()) & 255)/8;
+                tileX = ((getSCX()/8)+fetcherX) & 0x1F;
             }
 
             tileIndex = bus->read(tileMapBase+(tileY*32)+tileX);
@@ -110,7 +113,7 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
                 break;
             }
             uint16_t tileAddress;
-            uint8_t lineInTile = (getLY() + getSCY())%8;
+            uint8_t lineInTile = (fetcherY+getSCY())%8;
             if(addressingMode){
                 tileAddress = 0x8000 + 16*tileIndex + (lineInTile*2);
             }else{
@@ -127,7 +130,7 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
                 break;
             }
             uint16_t tileAddress;
-            uint8_t lineInTile = (getLY() + getSCY())%8;
+            uint8_t lineInTile = (fetcherY+getSCY())%8;
             if(addressingMode){
                 tileAddress = 0x8000 + 16*tileIndex + (lineInTile*2)+1;
             }else{
@@ -150,7 +153,7 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
             uint8_t pixel = (((tileHigh >> i) & 1) << 1)| ((tileLow >> i) & 1);
             fifoPixel.push(pixel);
         }
-        pixelCol += 8;
+        fetcherX++;
         tileHighFilled = false;
         tileLowFilled = false;
     }
@@ -163,6 +166,11 @@ void PPU::emulateCycle(){
             // OAM scan
             OAM_scan();
             if(dots == 80){
+                fetcherX = 0;
+                fetcherState = GET_TILE;
+                tileHighFilled = false;
+                tileLowFilled = false;
+                switchFetcherState = true;
                 mode = 3;
             }
             break;
@@ -192,11 +200,12 @@ void PPU::emulateCycle(){
 
             uint8_t popPixel = fifoPixel.pop();
             
-            if(popPixel == 0xFF){
+            if(popPixel == 0xFF || mode3Dots < (getSCX()%8)){
                 return;
             }
 
             frameBuffer.push(popPixel);
+            pixelCol++;
 
             if(pixelCol >= 160){
                 mode = 0;
@@ -211,9 +220,10 @@ void PPU::emulateCycle(){
                 uint8_t LY = getLY();
                 uint8_t newLY = LY+1;
                 bus->write(0xFF44, newLY);
+
+                pixelCol = 0;
                 
-                if(LY <= 143){
-                    pixelCol = 0;
+                if(newLY <= 143){
                     mode = 2;
                 }else{
                     uint8_t IF = bus->read(0xFF0F);
@@ -226,11 +236,9 @@ void PPU::emulateCycle(){
             break;
         }
         case 1:{
-            uint8_t IF = bus->read(0xFF0F);
-            IF |= 1;
-            bus->write(0xFF0F, IF);
-            if(mode1Dots != 4560){
-                mode1Dots++;
+            mode1Dots++;
+            uint8_t LY = getLY();
+            if(LY <= 153){
                 if((mode1Dots % 456) == 0){
                     bus->write(0xFF44, getLY()+1);
                 }
@@ -239,6 +247,7 @@ void PPU::emulateCycle(){
             mode1Dots = 0;
             mode = 2;
             bus->write(0xFF44, 0);
+            break;
         }
     }
 }
