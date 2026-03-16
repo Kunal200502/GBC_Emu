@@ -122,6 +122,9 @@ void Bus::write(uint16_t address, uint8_t value){
 
     // writing to the I/O Registers
     if(address >= 0xFF00 && address <= 0xFF7F){
+        if(address >= 0xFF04 && address <= 0xFF07){
+            timer.write(address, value);
+        }
         IO_registers[address-0xFF00] = value;
         return;
     }

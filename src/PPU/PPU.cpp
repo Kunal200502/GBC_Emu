@@ -59,7 +59,7 @@ uint8_t PPU::getSCX(){
     return bus->read(0xFF43);
 }
 uint8_t PPU::getSCY(){
-    return bus->read(0xFF43);
+    return bus->read(0xFF42);
 }
 uint8_t PPU::getWY(){
     return bus->read(0xFF4A);

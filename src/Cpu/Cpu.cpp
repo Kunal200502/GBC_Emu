@@ -387,20 +387,23 @@ void Cpu::serviceInterrupt(uint8_t IF){
 uint8_t Cpu::emulateCycle(){
     uint8_t IE = bus->read(0xFFFF);
     uint8_t IF = bus->read(0xFF0F);
-    if(halted){
-        if(IF && IE){
-            halted = false;
-            if(IME){
-                serviceInterrupt(IF);
-            }
-        }else{
-            return 0;
+
+    if(IE & IF){
+        halted = false;
+        if(IME){
+            serviceInterrupt(IF);
         }
     }
+
     if(EI_pending){
         IME = EI_pending;
         EI_pending = false;
     }
+    
+    if(halted){
+        return 1;
+    }
+
     uint8_t opcode = bus->read(PC++);
 
     bool branch = true;
@@ -1015,9 +1018,6 @@ uint8_t Cpu::emulateCycle(){
     // adding clock cycles
     clock += opcode_cycles;
 
-    if(IME && (IE & IF)){
-        serviceInterrupt(IF);
-    }
 
     return opcode_cycles;
 }

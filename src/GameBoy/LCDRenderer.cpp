@@ -10,8 +10,8 @@ LCD_Renderer::LCD_Renderer(){
         "GameBoyColor",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        160*10,
-        144*10,
+        160*5,
+        144*5,
         SDL_WINDOW_SHOWN
     );
 

@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
+#include <iostream>
+#include <iomanip>
 
 class Timer{
     private:
@@ -11,7 +13,7 @@ class Timer{
         uint8_t timerCounter = 0;
 
         uint8_t timerModulo = 0;
-        uint8_t timerControl = 0;
+        uint8_t timerControl = 0xF8;
 
         uint32_t getMachineCycleFrequency();
         void stepDividerRegister(uint8_t);
