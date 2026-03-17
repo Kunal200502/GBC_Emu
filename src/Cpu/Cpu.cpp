@@ -394,7 +394,7 @@ uint8_t Cpu::emulateCycle(){
             serviceInterrupt(IF);
         }
     }
-
+    
     if(EI_pending){
         IME = EI_pending;
         EI_pending = false;
