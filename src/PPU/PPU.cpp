@@ -175,7 +175,6 @@ void PPU::emulateCycle(){
             break;
         }
         case 3:{
-            mode3Dots++;
             uint8_t LCDC = getLCDC();
             uint8_t WX = getWX();
             uint8_t WY = getWY();
@@ -199,7 +198,7 @@ void PPU::emulateCycle(){
 
             uint8_t popPixel = fifoPixel.pop();
             
-            if(popPixel == 0xFF || mode3Dots < (getSCX()%8)){
+            if(popPixel == 0xFF || (dots-80) < (getSCX()%8)){
                 return;
             }
 
@@ -213,9 +212,8 @@ void PPU::emulateCycle(){
             break;
         }
         case 0:{
-            mode3Dots++;
-            if(mode3Dots == 376){
-                mode3Dots = 0;
+            if(dots == 456){
+                dots = 0;
                 uint8_t LY = getLY();
                 uint8_t newLY = LY+1;
                 bus->write(0xFF44, newLY);
@@ -235,15 +233,15 @@ void PPU::emulateCycle(){
             break;
         }
         case 1:{
-            mode1Dots++;
             uint8_t LY = getLY();
             if(LY <= 153){
-                if((mode1Dots % 456) == 0){
+                if(dots == 456){
+                    dots = 0;
                     bus->write(0xFF44, getLY()+1);
                 }
                 return;
             }
-            mode1Dots = 0;
+            dots = 0;
             mode = 2;
             bus->write(0xFF44, 0);
             break;

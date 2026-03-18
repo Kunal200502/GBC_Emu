@@ -35,7 +35,7 @@ class FrameBuffer{
 class PPU{
     private:
         uint8_t mode = 2;
-        uint8_t dots = 0;
+        uint16_t dots = 0;
 
         Bus* bus;
         FIFO_Pixel fifoPixel;
@@ -71,7 +71,7 @@ class PPU{
         uint8_t tileHigh = 0;
         void fetcher(bool windowTile, bool tileMap, bool addressingMode);
 
-        uint16_t mode1Dots = 0;
+        uint16_t mode1Dots = 1;
 
         void emulateCycle();
         
