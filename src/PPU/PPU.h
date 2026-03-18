@@ -4,32 +4,13 @@
 #include <iostream>
 #include "../Bus/Bus.h"
 #include "LCDRenderer.h"
+#include "FIFOPixel.h"
 
 enum FetcherState{
     GET_TILE,
     GET_TILE_DATA_LOW,
     GET_TILE_DATA_HIGH,
     SLEEP
-};
-
-class FIFO_Pixel{
-    std::vector<uint8_t> array;
-    int left = -1;
-    int right = 0;
-
-    public:
-        FIFO_Pixel();
-        void push(uint8_t);
-        uint8_t pop();
-};
-
-class FrameBuffer{
-    public:
-    uint16_t pointer = 0;
-        bool drawFLag = false;
-        std::vector<uint8_t> array;
-        FrameBuffer();
-        void push(uint8_t);
 };
 
 class PPU{
@@ -70,6 +51,8 @@ class PPU{
         uint8_t tileLow = 0;
         uint8_t tileHigh = 0;
         void fetcher(bool windowTile, bool tileMap, bool addressingMode);
+
+        uint8_t scxDiscard = 0;
 
         uint16_t mode1Dots = 1;
 

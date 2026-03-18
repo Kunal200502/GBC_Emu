@@ -12,6 +12,7 @@ set(
     Timer/Timer.cpp
     PPU/PPU.cpp
     PPU/LCDRenderer.cpp
+    PPU/FIFOPixel.cpp
     GameBoy/GameBoy.cpp
     main.cpp
 )

@@ -63,7 +63,8 @@ uint8_t Cpu::stackPop8(){
     return bus->read(SP++);
 }
 uint16_t Cpu::stackPop16(){
-    uint16_t value = bus->read(SP++) | (bus->read(SP++) << 8);
+    uint16_t value = bus->read(SP++);
+    value |= (bus->read(SP++) << 8);
     return value;
 }
 
@@ -401,7 +402,7 @@ uint8_t Cpu::emulateCycle(){
             return 5;
         }
     }
-    
+
     if(halted){
         return 1;
     }
@@ -506,8 +507,8 @@ uint8_t Cpu::emulateCycle(){
             A = bus->read(address); 
             break;} // LD A, (d8)
         case 0xE0: {uint8_t d8 = bus->read(PC++); bus->write(0xFF00+d8, A); break;} // LD (d8), A
-        case 0xFA: {uint16_t address = bus->read(PC++) | (bus->read(PC++) << 8); A = bus->read(address); break;} // LD A, (d16);
-        case 0xEA: {uint16_t address = bus->read(PC++) | (bus->read(PC++) << 8); bus->write(address, A); break;} // LD (a16), A
+        case 0xFA: {uint16_t address = bus->read(PC++); address |= (bus->read(PC++) << 8); A = bus->read(address); break;} // LD A, (d16);
+        case 0xEA: {uint16_t address = bus->read(PC++); address |= (bus->read(PC++) << 8); bus->write(address, A); break;} // LD (a16), A
         case 0x2A: {uint16_t address = getHL(); A = bus->read(address); L++; if(L == 0){H++;} break;} // LD A, (HL+)
         case 0x3A: {uint16_t address = getHL(); A = bus->read(address); address--; H = ((address >> 8) & 0xFF); L = (address & 0xFF); break;} // LD A, (HL-)
         case 0x02: {uint16_t address = (B << 8) | C; bus->write(address, A); break;} // LD (BC), A
@@ -517,7 +518,7 @@ uint8_t Cpu::emulateCycle(){
         case 0x01: {C = bus->read(PC++); B = bus->read(PC++); break;} // LD BC, d16
         case 0x11: {E = bus->read(PC++); D = bus->read(PC++); break;} // LD DE, d16
         case 0x21: {L = bus->read(PC++); H = bus->read(PC++); break;} // LD HL, d16
-        case 0x31: {SP = (bus->read(PC++) | (bus->read(PC++) << 8)); break;} // LD SP, d16
+        case 0x31: {SP = bus->read(PC++); SP |= (bus->read(PC++) << 8); break;} // LD SP, d16
         case 0xF9: {SP = (H << 8) | L; break;} // LD SP, HL
 
         case 0xC5: {stackPush16(B, C); break;}// PUSH BC

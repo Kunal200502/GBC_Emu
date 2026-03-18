@@ -64,7 +64,7 @@ uint8_t Bus::read(uint16_t address) const{
         return hram[address-0xFF80];
     }
 
-    // reading the IF register 
+    // reading the IE register 
     if(address == 0xFFFF){
         return IE_Register;
     }
@@ -74,7 +74,8 @@ uint8_t Bus::read(uint16_t address) const{
 }
 
 uint16_t Bus::read16(uint16_t address) const{
-    uint16_t value = read(address) | (read(address+1) << 8);
+    uint16_t value = read(address);
+    value |= (read(address+1) << 8);
     return value;
 }
 
@@ -124,6 +125,7 @@ void Bus::write(uint16_t address, uint8_t value){
     if(address >= 0xFF00 && address <= 0xFF7F){
         if(address >= 0xFF04 && address <= 0xFF07){
             timer.write(address, value);
+            return;
         }
         IO_registers[address-0xFF00] = value;
         return;

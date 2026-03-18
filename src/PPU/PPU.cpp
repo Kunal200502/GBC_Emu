@@ -4,35 +4,6 @@ bool checkBit(uint8_t value, uint8_t bit){
     return (value >> bit) & 1;
 }
 
-FIFO_Pixel::FIFO_Pixel(){
-    array = std::vector<uint8_t>(16, 0xFF);
-}
-void FIFO_Pixel::push(uint8_t value){
-    array[right] = value;
-    right = (right+1)%16;
-}
-uint8_t FIFO_Pixel::pop(){
-    uint8_t value = array[left];
-    if(value == 0xFF){
-        return 0xFF;
-    }
-    array[left] = 0xFF;
-    left = (left+1)%16;
-    return value;
-}
-
-FrameBuffer::FrameBuffer(){
-    array = std::vector<uint8_t>(160*144, 0);
-}
-void FrameBuffer::push(uint8_t value){
-    array[pointer] = value;
-    pointer++;
-    if(pointer == 160*144){
-        drawFLag = true;
-        pointer = 0;
-    }
-}
-
 PPU::PPU(Bus* b){
     bus = b;
     fifoPixel = FIFO_Pixel();
@@ -171,6 +142,8 @@ void PPU::emulateCycle(){
                 tileLowFilled = false;
                 switchFetcherState = true;
                 mode = 3;
+                scxDiscard = 0;
+                fifoPixel.clear();
             }
             break;
         }
@@ -198,7 +171,11 @@ void PPU::emulateCycle(){
 
             uint8_t popPixel = fifoPixel.pop();
             
-            if(popPixel == 0xFF || (dots-80) < (getSCX()%8)){
+            if(popPixel == 0xFF){
+                return;
+            }
+            if(scxDiscard < (getSCX()%8)){
+                scxDiscard++;
                 return;
             }
 

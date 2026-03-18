@@ -13,16 +13,16 @@ class Cpu{
     const uint32_t DIV_REGISTER_FREQUENCY = 16384;
 
     // registers
-    uint8_t A = 0x11;
-    uint8_t B = 0x00;
-    uint8_t C = 0x00;
-    uint8_t D = 0xFF;
-    uint8_t E = 0x56;
-    uint8_t H = 0x00;
-    uint8_t L = 0x0D;
+    uint8_t A = 0x01;
+    uint8_t B = 0xFF;
+    uint8_t C = 0x13;
+    uint8_t D = 0x00;
+    uint8_t E = 0xD8;
+    uint8_t H = 0x01;
+    uint8_t L = 0x4D;
     uint16_t SP = 0xFFFE; // stack pointer
     uint16_t PC = 0x0100; // program counter
-    uint8_t F = 0x80; // flags
+    uint8_t F = 0xB0; // flags
 
     bool IME = false;
     bool EI_pending = false;
