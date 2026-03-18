@@ -4,7 +4,6 @@ GameBoy::GameBoy(){
     bus = new Bus();
     ppu = new PPU(bus);
     cpu = new Cpu();
-    renderer = new LCD_Renderer();
 }
 
 void GameBoy::startGameboy(MBC1* cart){
@@ -22,9 +21,5 @@ void GameBoy::startGameboy(MBC1* cart){
         bus->stepTimer(cycles);
 
         ppu->step(4*cycles);
-        if(ppu->frameBuffer.drawFLag){
-            renderer->drawFrame(ppu->frameBuffer.array);
-            ppu->frameBuffer.drawFLag = false;
-        }
     }
 }

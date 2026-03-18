@@ -11,8 +11,8 @@ set(
     Cpu/Opcode_info.cpp
     Timer/Timer.cpp
     PPU/PPU.cpp
+    PPU/LCDRenderer.cpp
     GameBoy/GameBoy.cpp
-    GameBoy/LCDRenderer.cpp
     main.cpp
 )
 

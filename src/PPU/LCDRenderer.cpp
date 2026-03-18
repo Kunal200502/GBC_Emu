@@ -26,24 +26,17 @@ LCD_Renderer::LCD_Renderer(){
     texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144);
 }
 
-void LCD_Renderer::drawFrame(std::vector<uint8_t>& array){
-    for(int i = 0; i<array.size(); i++){
-        switch(array[i] & 0x3){
-            case 0x0:
-                pixelBuffer[i] = 0xFFFFFFFF;
-                break;
-            case 0x1:
-                pixelBuffer[i] = 0xD3D3D3FF;
-                break;
-            case 0x2:
-                pixelBuffer[i] = 0xA9A9A9FF;
-                break;
-            case 0x3:
-                pixelBuffer[i] = 0x000000FF;
-                break;
-        }
-    }
 
+void LCD_Renderer::pushPixel(uint8_t pixel){
+    pixelBuffer[pixelBufferPointer] = pixelMapper[pixel & 0x3];
+    pixelBufferPointer++;
+    if(pixelBufferPointer == 160*144){
+        pixelBufferPointer = 0;
+        drawFrame();
+    }
+}
+
+void LCD_Renderer::drawFrame(){
     SDL_UpdateTexture(texture, NULL, pixelBuffer, 160*4);
 
     SDL_RenderClear(renderer);

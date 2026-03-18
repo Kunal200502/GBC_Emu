@@ -36,7 +36,7 @@ void FrameBuffer::push(uint8_t value){
 PPU::PPU(Bus* b){
     bus = b;
     fifoPixel = FIFO_Pixel();
-    frameBuffer = FrameBuffer();
+    renderer = new LCD_Renderer();
 }
 
 uint8_t PPU::getLCDC(){
@@ -85,7 +85,6 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
     switchFetcherState = !switchFetcherState;
     switch(fetcherState){
         case GET_TILE: {
-            // std::cout << (int)fetcherX << std::endl;
             if(switchFetcherState){
                 fetcherState = GET_TILE_DATA_LOW;
                 break;
@@ -204,7 +203,7 @@ void PPU::emulateCycle(){
                 return;
             }
 
-            frameBuffer.push(popPixel);
+            renderer->pushPixel(popPixel);
             pixelCol++;
 
             if(pixelCol >= 160){

@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include "../Bus/Bus.h"
+#include "LCDRenderer.h"
 
 enum FetcherState{
     GET_TILE,
@@ -38,6 +39,7 @@ class PPU{
 
         Bus* bus;
         FIFO_Pixel fifoPixel;
+        LCD_Renderer* renderer;
 
         uint8_t getLCDC();
         uint8_t getLY();
@@ -74,7 +76,6 @@ class PPU{
         void emulateCycle();
         
     public:
-        FrameBuffer frameBuffer;
         PPU(Bus*);
         void step(uint8_t);
 };
