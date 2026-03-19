@@ -371,17 +371,27 @@ void Cpu::clearIFBit(uint8_t bit){
     bus->write(0xFF0F, IF);
 }
 
-void Cpu::serviceInterrupt(uint8_t IF){
+void Cpu::serviceInterrupt(){
     std::vector<uint8_t> interruptVector = {0x40, 0x48, 0x50, 0x58, 0x60};
+
+    IME = false;
+
+    bus->write(--SP, (PC >> 8));
+
+    uint8_t IE = bus->read(0xFFFF);
+    uint8_t IF = bus->read(0xFF0F);
+
+    bus->write(--SP, PC & 0xFF);
+
+    uint8_t vector = 0x00;
     for(int i = 0; i<5; i++){
-        if(IF & (1 << i)){
-            IME = false;
-            stackPush16(PC);
-            PC = interruptVector[i];
+        if((IE & IF & 0x1F) & (1 << i)){
+            vector = interruptVector[i];
             clearIFBit(i);
             break;
         }
     }
+    PC = vector;
 }
 
 uint8_t Cpu::emulateCycle(){
@@ -395,10 +405,10 @@ uint8_t Cpu::emulateCycle(){
         EI_pending = false;
     }
 
-    if(IE & IF){
+    if(IE & IF & 0x1F){
         halted = false;
         if(IME){
-            serviceInterrupt(IF);
+            serviceInterrupt();
             return 5;
         }
     }

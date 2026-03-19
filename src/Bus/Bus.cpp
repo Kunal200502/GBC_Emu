@@ -6,7 +6,7 @@ Bus::Bus(){
         vram = std::vector<uint8_t>(0x2000, 0);
         wram = std::vector<uint8_t>(0x2000, 0);
         hram = std::vector<uint8_t>(0x80, 0);
-        IO_registers = std::vector<uint8_t>(0x80, 0);
+        io_registers = new IO_Registers();
         OAM_memory = std::vector<uint8_t>(0xA0, 0);
 }
 
@@ -56,7 +56,7 @@ uint8_t Bus::read(uint16_t address) const{
         if(address >= 0xFF04 && address <= 0xFF07){
             return timer.read(address);
         }
-        return IO_registers[address-0xFF00];
+        return io_registers->read(address-0xFF00);
     }
 
     // reading from the hram
@@ -127,7 +127,7 @@ void Bus::write(uint16_t address, uint8_t value){
             timer.write(address, value);
             return;
         }
-        IO_registers[address-0xFF00] = value;
+        io_registers->write(address-0xFF00, value);
         return;
     }
     

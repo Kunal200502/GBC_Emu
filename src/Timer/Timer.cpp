@@ -53,7 +53,7 @@ uint8_t Timer::read(uint16_t address) const{
         case 0xFF04: return (dividerRegister >> 8); 
         case 0xFF05: return timerCounter; 
         case 0xFF06: return timerModulo;
-        case 0xFF07: return timerControl;
+        case 0xFF07: return timerControl | 0xF8;
     }
     return 0xFF;
 }

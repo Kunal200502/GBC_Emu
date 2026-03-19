@@ -3,6 +3,7 @@
 #include <vector>
 #include "../Cartridge/Cartridge.h"
 #include "../Timer/Timer.h"
+#include "IO_Registers.h"
 #include <iomanip>
 
 class Cartridge;
@@ -13,7 +14,7 @@ class Bus{
         std::vector<uint8_t> vram; // 0x8000 - 0x9FFF
         std::vector<uint8_t> wram; // 0xC000 - 0xDFFF
         std::vector<uint8_t> hram; // 0xFF80 - 0xFFFE
-        std::vector<uint8_t> IO_registers; // 0xFF00 - 0xFF7F
+        IO_Registers* io_registers; // 0xFF00 - 0xFF7F
         std::vector<uint8_t> OAM_memory; // 0xFE00 - 0xFE9F
         uint8_t IE_Register = 0; // 0xFFFF
 

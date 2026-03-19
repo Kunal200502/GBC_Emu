@@ -98,7 +98,7 @@ class Cpu{
 
     void daa();
 
-    void serviceInterrupt(uint8_t);
+    void serviceInterrupt();
     void clearIFBit(uint8_t);
 
     public:

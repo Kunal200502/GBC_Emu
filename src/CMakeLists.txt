@@ -6,6 +6,7 @@ find_package(SDL2)
 set(
     SOURCE_FILES
     Bus/Bus.cpp
+    Bus/IO_Registers.cpp
     Cartridge/Cartridge.cpp
     Cpu/Cpu.cpp
     Cpu/Opcode_info.cpp

@@ -68,13 +68,14 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
             uint8_t tileX;
             if(windowTile){
                 tileY = fetcherY/8;
-                tileX = pixelCol/8;
+                tileX = fetcherX;
             }else{
                 tileY = ((fetcherY + getSCY()) & 255)/8;
                 tileX = ((getSCX()/8)+fetcherX) & 0x1F;
             }
 
             tileIndex = bus->read(tileMapBase+(tileY*32)+tileX);
+
             break;
         }
         case GET_TILE_DATA_LOW: {
@@ -130,6 +131,12 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
 }
 
 void PPU::emulateCycle(){
+    if(!checkBit(getLCDC(), 7)){
+        mode = 2;
+        dots = 0;
+        bus->write(0xFF44, 0);
+        return;
+    }
     dots++;
     switch(mode){
         case 2:{
@@ -143,6 +150,7 @@ void PPU::emulateCycle(){
                 switchFetcherState = true;
                 mode = 3;
                 scxDiscard = 0;
+                pixelCol = 0;
                 fifoPixel.clear();
             }
             break;
@@ -194,8 +202,6 @@ void PPU::emulateCycle(){
                 uint8_t LY = getLY();
                 uint8_t newLY = LY+1;
                 bus->write(0xFF44, newLY);
-
-                pixelCol = 0;
                 
                 if(newLY <= 143){
                     mode = 2;
