@@ -7,7 +7,7 @@ bool checkBit(uint8_t value, uint8_t bit){
 PPU::PPU(Bus* b){
     bus = b;
     fifoPixel = FIFO_Pixel();
-    renderer = new LCD_Renderer();
+    renderer = new LCD_Renderer(160, 144, 5);
 }
 
 uint8_t PPU::getLCDC(){

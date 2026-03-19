@@ -1,6 +1,8 @@
 #include "LCDRenderer.h"
 
-LCD_Renderer::LCD_Renderer(){
+LCD_Renderer::LCD_Renderer(uint8_t w, uint8_t h, uint8_t scale){
+    width = w;
+    height = h;
     if(SDL_Init(SDL_INIT_VIDEO) < 0){
         std::cout << "Could not initialize system" << std::endl;
         exit(1);
@@ -10,8 +12,8 @@ LCD_Renderer::LCD_Renderer(){
         "GameBoyColor",
         SDL_WINDOWPOS_CENTERED,
         SDL_WINDOWPOS_CENTERED,
-        160*5,
-        144*5,
+        w*scale,
+        h*scale,
         SDL_WINDOW_SHOWN
     );
 
@@ -21,23 +23,23 @@ LCD_Renderer::LCD_Renderer(){
     }
 
     renderer = SDL_CreateRenderer(window, -1, 0);
-    SDL_RenderSetLogicalSize(renderer, 160, 144);
+    SDL_RenderSetLogicalSize(renderer, w, h);
 
-    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, 160, 144);
+    texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_STREAMING, w, h);
 }
 
 
 void LCD_Renderer::pushPixel(uint8_t pixel){
     pixelBuffer[pixelBufferPointer] = pixelMapper[pixel & 0x3];
     pixelBufferPointer++;
-    if(pixelBufferPointer == 160*144){
+    if(pixelBufferPointer == width*height){
         pixelBufferPointer = 0;
         drawFrame();
     }
 }
 
 void LCD_Renderer::drawFrame(){
-    SDL_UpdateTexture(texture, NULL, pixelBuffer, 160*4);
+    SDL_UpdateTexture(texture, NULL, pixelBuffer, width*4);
 
     SDL_RenderClear(renderer);
     SDL_RenderCopy(renderer, texture, NULL, NULL);
