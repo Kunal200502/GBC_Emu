@@ -19,6 +19,9 @@ class Bus{
         uint8_t IE_Register = 0; // 0xFFFF
 
         Timer timer;
+
+        bool start_DMA_transfer = false;
+        uint8_t OAM_DMA_pointer = 0;
     public:
         Bus();
         uint8_t read(uint16_t) const;

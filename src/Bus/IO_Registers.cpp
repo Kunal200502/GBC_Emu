@@ -25,6 +25,9 @@ IO_Registers::IO_Registers(){
 }
 
 uint8_t IO_Registers::read(uint16_t address){
+    if(address == 0x00){
+        return 0xFF;
+    }
     if(initialValues.find(address) == initialValues.end()){
         return 0xFF;
     }
@@ -32,6 +35,9 @@ uint8_t IO_Registers::read(uint16_t address){
 }
 
 void IO_Registers::write(uint16_t address, uint8_t value){
+    if(address == 0x00){
+        return;
+    }
     auto it = openValues.find(address);
     if(it != openValues.end()){
         registers[address] = value | it->second;

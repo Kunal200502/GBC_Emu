@@ -41,7 +41,7 @@ uint8_t PPU::getWX(){
 
 void PPU::OAM_scan(){
     if((dots % 2) == 1){
-        oam_scan_buffer = bus->read(0xFE00+dots*2); // reading the Y index value (1st byte) of the object
+        oam_scan_buffer = bus->read(0xFE00+(dots-1)*2); // reading the Y index value (1st byte) of the object
     }else{
         uint8_t spriteY = oam_scan_buffer-16;
         uint8_t obj_height = 8 + 8*((getLCDC() >> 2) & 1);

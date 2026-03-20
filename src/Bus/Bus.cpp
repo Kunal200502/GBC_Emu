@@ -127,6 +127,9 @@ void Bus::write(uint16_t address, uint8_t value){
             timer.write(address, value);
             return;
         }
+        if(address == 0xFF46){
+            start_DMA_transfer = true;
+        }
         io_registers->write(address-0xFF00, value);
         return;
     }
@@ -158,5 +161,17 @@ void Bus::stepTimer(uint8_t steps){
         uint8_t IF = read(0xFF0F);
         IF |= 0x4;
         write(0xFF0F, IF);
+    }
+    if(start_DMA_transfer){
+        uint16_t source = read(0xFF46) << 8;
+        for(int i = 0; i < steps; i++){
+            uint8_t sourceValue = read(source+OAM_DMA_pointer);
+            write(0xFE00+OAM_DMA_pointer, sourceValue);
+            OAM_DMA_pointer++;
+            if(OAM_DMA_pointer > 0x9F){
+                OAM_DMA_pointer = 0;
+                start_DMA_transfer = false;
+            }
+        }
     }
 }
