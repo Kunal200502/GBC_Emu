@@ -1,5 +1,14 @@
 #include "PPU.h"
 
+uint8_t reverseNum(uint8_t num){
+    uint8_t result = 0;
+    for(int i = 0; i<8; i++){
+        result = (result << 1) | (num & 1);
+        num >> 1;
+    }
+    return result;
+}
+
 OAM_Buffer::OAM_Buffer(){
     size = 0;
 }
@@ -16,12 +25,12 @@ bool OAM_Buffer::check(uint8_t pixelCol){
     if(size == 0){
         return false;
     }
-    while(pq.top().second+8 < pixelCol && size != 0){
+    while(size != 0 && pq.top().second < pixelCol){
         pq.pop();
         size--;
     }
     uint8_t x = pq.top().second;
-    return (x-8 <= pixelCol && x >= pixelCol);
+    return (x-8 <= pixelCol && x > pixelCol);
 }
 
 void OAM_Buffer::clear(){
@@ -182,15 +191,23 @@ void PPU::spriteFetcher(uint8_t objectNum){
 
     
     uint8_t lineInTile = getLY()-(yPosition-16);
+    if(checkBit(objAttr, 6)){
+        lineInTile = 7-lineInTile;
+    }
 
     uint16_t byteOffset = 16*tileIndex+(lineInTile*2);
 
     uint8_t tileLow = bus->read(0x8000+byteOffset);
     uint8_t tileHigh = bus->read(0x8000+byteOffset+1);
 
+    if(checkBit(objAttr, 5)){
+        tileLow = reverseNum(tileLow);
+        tileHigh = reverseNum(tileHigh);
+    }
+
     uint8_t noOfPixels = xPosition-pixelCol-getSCX();
 
-    for(int i = noOfPixels; i >= 0; i--){
+    for(int i = noOfPixels-1; i >= 0; i--){
         uint8_t pixel = (((tileHigh >> i) & 1) << 1)| ((tileLow >> i) & 1);
         spriteFIFOPixel.push(pixel);
     }

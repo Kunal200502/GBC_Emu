@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <SDL2/SDL.h>
+#include <iostream>
 
 class Joypad{
     private:

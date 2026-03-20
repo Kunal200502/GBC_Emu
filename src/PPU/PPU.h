@@ -10,7 +10,7 @@
 // compare function for the priority queue
 struct Compare{
     bool operator()(std::pair<uint8_t, uint8_t> a, std::pair<uint8_t, uint8_t> b){
-        return a.second < b.second;
+        return a.second > b.second;
     }
 };
 
