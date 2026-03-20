@@ -4,7 +4,7 @@ uint8_t reverseNum(uint8_t num){
     uint8_t result = 0;
     for(int i = 0; i<8; i++){
         result = (result << 1) | (num & 1);
-        num >> 1;
+        num = num >> 1;
     }
     return result;
 }
