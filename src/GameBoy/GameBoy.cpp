@@ -12,9 +12,11 @@ void GameBoy::startGameboy(MBC1* cart){
     SDL_Event event;
 
     while(true){
-        SDL_PollEvent(&event);
-        if(event.type == SDL_QUIT){
-            return;
+        while(SDL_PollEvent(&event)){
+            if(event.type == SDL_QUIT){
+                return;
+            }
+            bus->processJoyPadInput(event);
         }
         int cycles = cpu->emulateCycle();
         bus->stepTimer(cycles);

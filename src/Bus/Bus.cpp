@@ -8,6 +8,7 @@ Bus::Bus(){
         hram = std::vector<uint8_t>(0x80, 0);
         io_registers = new IO_Registers();
         OAM_memory = std::vector<uint8_t>(0xA0, 0);
+        joypad = Joypad();
 }
 
 void Bus::connectCartridge(MBC1* cartridge){
@@ -52,6 +53,10 @@ uint8_t Bus::read(uint16_t address) const{
 
     // reading from the IO Registers
     if(address >= 0xFF00 && address <= 0xFF7F){
+        // reading from the joypad register
+        if(address == 0xFF00){
+            return joypad.read();
+        }
         // reading from the timer registers
         if(address >= 0xFF04 && address <= 0xFF07){
             return timer.read(address);
@@ -123,6 +128,9 @@ void Bus::write(uint16_t address, uint8_t value){
 
     // writing to the I/O Registers
     if(address >= 0xFF00 && address <= 0xFF7F){
+        if(address == 0xFF00){
+            joypad.write(value);
+        }
         if(address >= 0xFF04 && address <= 0xFF07){
             timer.write(address, value);
             return;
@@ -173,5 +181,13 @@ void Bus::stepTimer(uint8_t steps){
                 start_DMA_transfer = false;
             }
         }
+    }
+}
+
+void Bus::processJoyPadInput(SDL_Event& event){
+    if(joypad.processButtonEvent(event)){
+        uint8_t IF = read(0xFF0F);
+        IF |= 0x10;
+        write(0xFF0F, IF);
     }
 }

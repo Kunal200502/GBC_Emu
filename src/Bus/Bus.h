@@ -3,6 +3,7 @@
 #include <vector>
 #include "../Cartridge/Cartridge.h"
 #include "../Timer/Timer.h"
+#include "../Joypad/Joypad.h"
 #include "IO_Registers.h"
 #include <iomanip>
 
@@ -18,6 +19,7 @@ class Bus{
         std::vector<uint8_t> OAM_memory; // 0xFE00 - 0xFE9F
         uint8_t IE_Register = 0; // 0xFFFF
 
+        Joypad joypad;
         Timer timer;
 
         bool start_DMA_transfer = false;
@@ -30,4 +32,5 @@ class Bus{
         void write16(uint16_t, uint16_t);
         void connectCartridge(MBC1*);
         void stepTimer(uint8_t);
+        void processJoyPadInput(SDL_Event&);
 };
