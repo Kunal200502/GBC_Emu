@@ -1,5 +1,44 @@
 #include "PPU.h"
 
+OAM_Buffer::OAM_Buffer(){
+    size = 0;
+}
+
+void OAM_Buffer::push(std::pair<uint8_t, uint8_t> object){
+    if(size == 10){
+        return;
+    }
+    pq.push(object);
+    size++;
+}
+
+bool OAM_Buffer::check(uint8_t pixelCol){
+    if(size == 0){
+        return false;
+    }
+    while(pq.top().second+8 < pixelCol && size != 0){
+        pq.pop();
+        size--;
+    }
+    uint8_t x = pq.top().second;
+    return (x-8 <= pixelCol && x >= pixelCol);
+}
+
+void OAM_Buffer::clear(){
+    while(!pq.empty()){
+        pq.pop();
+    }
+    size = 0;
+}
+
+std::pair<uint8_t, uint8_t> OAM_Buffer::pop(){
+    std::pair<uint8_t, uint8_t> output = pq.top();
+    pq.pop();
+    size--;
+    return output;
+}
+
+
 bool checkBit(uint8_t value, uint8_t bit){
     return (value >> bit) & 1;
 }
@@ -7,7 +46,9 @@ bool checkBit(uint8_t value, uint8_t bit){
 PPU::PPU(Bus* b){
     bus = b;
     fifoPixel = FIFO_Pixel();
+    spriteFIFOPixel = FIFO_Pixel();
     renderer = new LCD_Renderer(160, 144, 5);
+    oam_buffer = new OAM_Buffer();
 }
 
 uint8_t PPU::getLCDC(){
@@ -41,14 +82,15 @@ uint8_t PPU::getWX(){
 
 void PPU::OAM_scan(){
     if((dots % 2) == 1){
-        oam_scan_buffer = bus->read(0xFE00+(dots-1)*2); // reading the Y index value (1st byte) of the object
+        oam_scan_buffer = bus->read(0xFE00+oamObjectNum*4); // reading the Y index value (1st byte) of the object
     }else{
         uint8_t spriteY = oam_scan_buffer-16;
         uint8_t obj_height = 8 + 8*((getLCDC() >> 2) & 1);
         uint8_t LY = getLY();
         if(LY >= spriteY && LY < spriteY+obj_height){
-            oam_buffer.push_back(dots/2); // storing the index of the object in OAM (0 - 39)
+            oam_buffer->push({oamObjectNum, bus->read(0xFE00+oamObjectNum*4+1)}); // storing the index of the object in OAM (0 - 39)
         }
+        oamObjectNum++;
     }
 }
 
@@ -130,6 +172,32 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
     }
 }
 
+void PPU::spriteFetcher(uint8_t objectNum){
+    uint16_t objAddress = 0xFE00+objectNum*4;
+
+    uint8_t yPosition = bus->read(objAddress);
+    uint8_t xPosition = bus->read(objAddress+1);
+    uint8_t tileIndex = bus->read(objAddress+2);
+    uint8_t objAttr = bus->read(objAddress+3);
+
+    
+    uint8_t lineInTile = getLY()-(yPosition-16);
+
+    uint16_t byteOffset = 16*tileIndex+(lineInTile*2);
+
+    uint8_t tileLow = bus->read(0x8000+byteOffset);
+    uint8_t tileHigh = bus->read(0x8000+byteOffset+1);
+
+    uint8_t noOfPixels = xPosition-pixelCol-getSCX();
+
+    for(int i = noOfPixels; i >= 0; i--){
+        uint8_t pixel = (((tileHigh >> i) & 1) << 1)| ((tileLow >> i) & 1);
+        spriteFIFOPixel.push(pixel);
+    }
+
+    fetchingSprite = false;
+}
+
 void PPU::emulateCycle(){
     if(!checkBit(getLCDC(), 7)){
         mode = 2;
@@ -143,6 +211,12 @@ void PPU::emulateCycle(){
             // OAM scan
             OAM_scan();
             if(dots == 80){
+                // if(oam_buffer->size != 0){
+                //     while(oam_buffer->size != 0){
+                //         std::cout << (int)oam_buffer->pop().second << " ";
+                //     }
+                //     std::cout << std::endl;
+                // }
                 fetcherX = 0;
                 fetcherState = GET_TILE;
                 tileHighFilled = false;
@@ -156,6 +230,14 @@ void PPU::emulateCycle(){
             break;
         }
         case 3:{
+            if(oam_buffer->check(pixelCol+getSCX())){
+                fetchingSprite = true;
+            }
+
+            if(fetchingSprite){
+                spriteFetcher(oam_buffer->pop().first);
+            }
+            
             uint8_t LCDC = getLCDC();
             uint8_t WX = getWX();
             uint8_t WY = getWY();
@@ -187,7 +269,14 @@ void PPU::emulateCycle(){
                 return;
             }
 
-            renderer->pushPixel(popPixel);
+            uint8_t spritePopPixel = spriteFIFOPixel.pop();
+
+            if(spritePopPixel != 0xFF){
+                renderer->pushPixel(spritePopPixel);
+            }else{
+                renderer->pushPixel(popPixel);
+            }
+
             pixelCol++;
 
             if(pixelCol >= 160){
@@ -205,6 +294,8 @@ void PPU::emulateCycle(){
                 
                 if(newLY <= 143){
                     mode = 2;
+                    oam_buffer->clear();
+                    oamObjectNum = 0;
                 }else{
                     uint8_t IF = bus->read(0xFF0F);
                     IF |= 1;
@@ -226,6 +317,8 @@ void PPU::emulateCycle(){
             }
             dots = 0;
             mode = 2;
+            oam_buffer->clear();
+            oamObjectNum = 0;
             bus->write(0xFF44, 0);
             break;
         }

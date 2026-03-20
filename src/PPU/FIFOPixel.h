@@ -4,10 +4,10 @@
 #include <iostream>
 
 class FIFO_Pixel{
-    std::vector<uint8_t> array;
     int left = 0;
     int right = 0;
-
+    std::vector<uint8_t> array; 
+    
     public:
         FIFO_Pixel();
         void push(uint8_t);

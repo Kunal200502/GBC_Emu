@@ -5,6 +5,26 @@
 #include "../Bus/Bus.h"
 #include "LCDRenderer.h"
 #include "FIFOPixel.h"
+#include <queue>
+
+// compare function for the priority queue
+struct Compare{
+    bool operator()(std::pair<uint8_t, uint8_t> a, std::pair<uint8_t, uint8_t> b){
+        return a.second < b.second;
+    }
+};
+
+class OAM_Buffer{
+    private:
+        std::priority_queue<std::pair<uint8_t, uint8_t>, std::vector<std::pair<uint8_t, uint8_t>>, Compare> pq;
+    public:
+        int size;
+        OAM_Buffer();
+        void push(std::pair<uint8_t, uint8_t>);
+        bool check(uint8_t pixelCol);
+        std::pair<uint8_t, uint8_t> pop();
+        void clear();
+};
 
 enum FetcherState{
     GET_TILE,
@@ -20,6 +40,7 @@ class PPU{
 
         Bus* bus;
         FIFO_Pixel fifoPixel;
+        FIFO_Pixel spriteFIFOPixel;
         LCD_Renderer* renderer;
 
         uint8_t getLCDC();
@@ -31,7 +52,8 @@ class PPU{
         uint8_t getWX();
         uint8_t getWY();
 
-        std::vector<uint8_t> oam_buffer;
+        uint8_t oamObjectNum = 0;
+        OAM_Buffer* oam_buffer;
         uint8_t oam_scan_buffer;
         void OAM_scan();
 
@@ -52,11 +74,17 @@ class PPU{
         uint8_t tileHigh = 0;
         void fetcher(bool windowTile, bool tileMap, bool addressingMode);
 
+        void spriteFetcher(uint8_t);
+
         uint8_t scxDiscard = 0;
 
         uint16_t mode1Dots = 1;
 
         void emulateCycle();
+
+        // sprite fetching logic
+        uint8_t spriteTile = 0;
+        bool fetchingSprite = false;
         
     public:
         PPU(Bus*);
