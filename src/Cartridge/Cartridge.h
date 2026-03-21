@@ -29,10 +29,21 @@ class MBC1: public Cartridge{
         void write(uint16_t, uint8_t);
 };
 
-class MBC2: public Cartridge{
+class MBC5: public Cartridge{
     private:
-        uint8_t rom_bank_number = 1;
+        uint8_t rom_bank_low = 1;
+        uint8_t rom_bank_high = 0;
+        uint8_t ram_bank_num = 0;
     public:
+        MBC5();
         uint8_t read(uint16_t) const;
         void write(uint16_t, uint8_t);
 };
+
+// class MBC2: public Cartridge{
+//     private:
+//         uint8_t rom_bank_number = 1;
+//     public:
+//         uint8_t read(uint16_t) const;
+//         void write(uint16_t, uint8_t);
+// };

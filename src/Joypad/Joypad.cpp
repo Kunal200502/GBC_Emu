@@ -25,9 +25,9 @@ bool Joypad::processButtonEvent(SDL_Event& event){
 
 uint8_t Joypad::read() const{
     if(((JOYP >> 5) & 1) ==  0){
-        return (JOYP | 0xC0) | (buttons & 0xF);
-    }else if(((JOYP >> 4) & 1) == 0){
         return (JOYP | 0xC0) | (buttons >> 4);
+    }else if(((JOYP >> 4) & 1) == 0){
+        return (JOYP | 0xC0) | (buttons & 0xF);
     }
     return 0xFF;
 }

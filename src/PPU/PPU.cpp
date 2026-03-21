@@ -205,9 +205,7 @@ void PPU::spriteFetcher(uint8_t objectNum){
         tileHigh = reverseNum(tileHigh);
     }
 
-    uint8_t noOfPixels = xPosition-pixelCol-getSCX();
-
-    for(int i = noOfPixels-1; i >= 0; i--){
+    for(int i = 7; i >= 0; i--){
         uint8_t pixel = (((tileHigh >> i) & 1) << 1)| ((tileLow >> i) & 1);
         spriteFIFOPixel.push(pixel);
     }
@@ -247,7 +245,7 @@ void PPU::emulateCycle(){
             break;
         }
         case 3:{
-            if(oam_buffer->check(pixelCol+getSCX())){
+            if(oam_buffer->check(pixelCol)){
                 fetchingSprite = true;
             }
 

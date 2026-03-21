@@ -110,6 +110,52 @@ void MBC1::write(uint16_t address, uint8_t value){
 }
 
 
+MBC5::MBC5(){
+    ram = std::vector<uint8_t>(32766, 0);
+}
+
+uint8_t MBC5::read(uint16_t address) const{
+    if(address >= 0x0000 && address <= 0x3FFF){
+        return rom[address];
+    }
+    if(address >= 0x4000 && address <= 0x7FFF){
+        return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)];
+    }
+
+    if(address >= 0xA000 && address <= 0xBFFF){
+        return ram[(address - 0xA000) + 0x2000*ram_bank_num];
+    }
+
+    return 0xFF;
+}
+
+void MBC5::write(uint16_t address, uint8_t value){
+    if(address >= 0x0000 && address <= 0x1FFF){
+        return;
+    }
+
+    if(address >= 0x2000 && address <= 0x2FFF){
+        rom_bank_low = value;
+        return;
+    }
+
+    if(address >= 0x3000 && address <= 0x3FFF){
+        rom_bank_high = (value & 1);
+        return;
+    }
+
+    if(address >= 0x4000 && address <= 0x5FFF){
+        ram_bank_num = value & 0xF;
+        return;
+    }
+
+    if(address >= 0xA000 && address <= 0xBFFF){
+        ram[(address-0xA000) + 0x2000*ram_bank_num] = value;
+        return;
+    }
+}
+
+
 // MBC2 
 // uint8_t MBC2::read(uint16_t address) const{
 //     // ROM Bank 00 [read-only]
