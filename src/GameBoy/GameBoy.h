@@ -5,6 +5,8 @@
 #include "../Cartridge/Cartridge.h"
 #include "../PPU/PPU.h"
 #include <iostream>
+#include <memory>
+#include <fstream>
 
 class GameBoy{
     public:
@@ -14,5 +16,5 @@ class GameBoy{
 
         GameBoy();
 
-        void startGameboy(MBC1*);
+        void startGameboy(std::string);
 };

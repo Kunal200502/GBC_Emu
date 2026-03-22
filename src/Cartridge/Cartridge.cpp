@@ -1,6 +1,11 @@
-#include <fstream>
-#include <iostream>
 #include "Cartridge.h"
+
+uint8_t Cartridge::read(uint16_t address) const{
+    return rom[address];
+}
+void Cartridge::write(uint16_t address, uint8_t value){
+    return;
+}
 
 void Cartridge::loadROM(std::string fileString){
     std::ifstream romFile(fileString, std::ios::binary);
@@ -27,6 +32,19 @@ void Cartridge::loadROM(std::string fileString){
         }
         romPointer += bytesRead;
     }
+}
+
+// NoMBC class
+NoMBC::NoMBC(){
+    ram = std::vector<uint8_t>(32766, 0);
+}
+
+uint8_t NoMBC::read(uint16_t address) const{
+    return rom[address];
+}
+
+void NoMBC::write(uint16_t address, uint8_t value){
+    return;
 }
 
 // MBC1 class
@@ -110,6 +128,62 @@ void MBC1::write(uint16_t address, uint8_t value){
 }
 
 
+// MBC3 class
+MBC3::MBC3(){
+    ram = std::vector<uint8_t>(32766, 0);
+}
+
+uint8_t MBC3::read(uint16_t address) const{
+    // ROM Bank 00
+    if(address <= 0x3FFF){
+        return rom[address];
+    }
+
+    // ROM Bank 01-7F
+    if(address <= 0x7FFF){
+        return rom[(address - 0x4000) + rom_bank_num*0x4000];
+    }
+
+    // RAM bank or RTC Register
+    if(address >= 0xA000 && address <= 0xBFFF){
+        // TODO - setup rtc
+        return rom[(address - 0x4000) + ram_rtc_selecter*0x2000];
+    }
+
+    std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
+    exit(1);
+}
+
+void MBC3::write(uint16_t address, uint8_t value){
+    // RAM and Timer enable
+    if(address <= 0x1FFF){
+        if(value && 0xF == 0xA){
+            ram_enable = true;
+        }else if(value == 0){
+            ram_enable = false;
+        }
+        return;
+    }
+
+    // ROM Bank Number
+    if(address <= 0x3FFF){
+        rom_bank_num = value & 0x7F;
+        return;
+    }
+
+    // RAM Bank Number - or - RTC Register Select
+    if(address <= 0x5FFF){
+        ram_rtc_selecter = value;
+    }
+
+    // Latch Clock Data
+    if(address <= 0x7FFF){
+        // TODO
+        return;
+    }
+}
+
+
 MBC5::MBC5(){
     ram = std::vector<uint8_t>(32766, 0);
 }
@@ -126,7 +200,8 @@ uint8_t MBC5::read(uint16_t address) const{
         return ram[(address - 0xA000) + 0x2000*ram_bank_num];
     }
 
-    return 0xFF;
+    std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
+    exit(1);
 }
 
 void MBC5::write(uint16_t address, uint8_t value){

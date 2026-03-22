@@ -13,9 +13,6 @@
 int main(int argc, char** argv){
     std::string romFile = argv[1];
 
-    MBC1 cart = MBC1();
-    cart.loadROM(romFile);
-
     GameBoy gameBoy = GameBoy();
-    gameBoy.startGameboy(&cart);
+    gameBoy.startGameboy(romFile);
 }

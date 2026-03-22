@@ -6,8 +6,8 @@ GameBoy::GameBoy(){
     cpu = new Cpu();
 }
 
-void GameBoy::startGameboy(MBC1* cart){
-    bus->connectCartridge(cart);
+void GameBoy::startGameboy(std::string fileString){
+    bus->connectCartridge(fileString);
     cpu->connectBus(bus);
     SDL_Event event;
 

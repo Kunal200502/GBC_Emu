@@ -11,8 +11,30 @@ Bus::Bus(){
         joypad = Joypad();
 }
 
-void Bus::connectCartridge(MBC1* cartridge){
-    this->cartridge = cartridge;
+void Bus::connectCartridge(std::string fileString){
+    std::ifstream romFile(fileString, std::ios::binary);
+    char buffer[0x14F];
+
+    romFile.read(buffer, 0x14F);
+
+    uint8_t Cartridge_type = buffer[0x147];
+
+    romFile.close();
+
+    if(Cartridge_type == 0x00){
+        cartridge =  std::make_unique<NoMBC>();
+    }else if(Cartridge_type >= 0x01 && Cartridge_type <= 0x03){
+        cartridge = std::make_unique<MBC1>();
+    }else if(Cartridge_type >= 0x0F && Cartridge_type <= 0x13){
+        cartridge = std::make_unique<MBC5>();
+    }else if(Cartridge_type >= 0x19 && Cartridge_type <= 0x1E){
+        cartridge = std::make_unique<MBC5>();
+    }else{
+        std::cout << "Cartridge Not Implemented" << std::endl;
+        exit(1);
+    }
+
+    cartridge->loadROM(fileString);
 }
 
 uint8_t Bus::read(uint16_t address) const{
