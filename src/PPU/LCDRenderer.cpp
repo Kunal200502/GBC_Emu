@@ -1,6 +1,7 @@
 #include "LCDRenderer.h"
 
 LCD_Renderer::LCD_Renderer(uint8_t w, uint8_t h, uint8_t scale){
+    clock = std::chrono::steady_clock::now();
     width = w;
     height = h;
     if(SDL_Init(SDL_INIT_VIDEO) < 0){
@@ -33,6 +34,9 @@ void LCD_Renderer::pushPixel(uint8_t pixel){
     pixelBuffer[pixelBufferPointer] = pixelMapper[pixel & 0x3];
     pixelBufferPointer++;
     if(pixelBufferPointer == width*height){
+        std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+        std::cout << 1000/(std::chrono::duration_cast<std::chrono::milliseconds>(end - clock).count()) << std::endl;
+        clock = end;
         pixelBufferPointer = 0;
         drawFrame();
     }

@@ -36,7 +36,7 @@ MBC1::MBC1(){
 
 uint8_t MBC1::read(uint16_t address) const{
     // ROM Bank X0 [read-only]
-    if(address >= 0x0000 && address <= 0x3FFF){
+    if(address <= 0x3FFF){
         return rom[address];
     }
 
@@ -47,7 +47,7 @@ uint8_t MBC1::read(uint16_t address) const{
     }
 
     // ROM BANK 01-7f [read-only switchable]
-    if(address >= 0x4000 && address <= 0x7FFF){
+    if(address <= 0x7FFF){
         return rom[(address - 0x4000) + 0x4000*bank];
     }
 
@@ -65,7 +65,7 @@ uint8_t MBC1::read(uint16_t address) const{
 
 void MBC1::write(uint16_t address, uint8_t value){
     // RAM enable [write only]
-    if(address >= 0x0000 && address <= 0x1FFF){
+    if(address <= 0x1FFF){
         if((value & 0xF) == 0xA){
             ram_enabled = true;
         }else{
@@ -75,7 +75,7 @@ void MBC1::write(uint16_t address, uint8_t value){
     }
 
     // ROM bank number [Write only]
-    if(address >= 0x2000 && address <= 0x3FFF){
+    if(address <= 0x3FFF){
         if((value & 0x1F) == 0x0){
             rom_bank_low5 = 0x1;
         }else{
@@ -85,13 +85,13 @@ void MBC1::write(uint16_t address, uint8_t value){
     }
 
     // RAM bank number or ROM bank upper 2 bits
-    if(address >= 0x4000 && address <= 0x5FFF){
+    if(address <= 0x5FFF){
         bank_high2 = value & 3;
         return;
     }
 
     // ROM or RAM mode select
-    if(address >= 0x6000 && address <= 0x7FFF){
+    if(address <= 0x7FFF){
         banking_mode = value & 1;
         return;
     }
@@ -115,10 +115,10 @@ MBC5::MBC5(){
 }
 
 uint8_t MBC5::read(uint16_t address) const{
-    if(address >= 0x0000 && address <= 0x3FFF){
+    if(address <= 0x3FFF){
         return rom[address];
     }
-    if(address >= 0x4000 && address <= 0x7FFF){
+    if(address <= 0x7FFF){
         return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)];
     }
 
@@ -130,21 +130,21 @@ uint8_t MBC5::read(uint16_t address) const{
 }
 
 void MBC5::write(uint16_t address, uint8_t value){
-    if(address >= 0x0000 && address <= 0x1FFF){
+    if(address <= 0x1FFF){
         return;
     }
 
-    if(address >= 0x2000 && address <= 0x2FFF){
+    if(address <= 0x2FFF){
         rom_bank_low = value;
         return;
     }
 
-    if(address >= 0x3000 && address <= 0x3FFF){
+    if(address <= 0x3FFF){
         rom_bank_high = (value & 1);
         return;
     }
 
-    if(address >= 0x4000 && address <= 0x5FFF){
+    if(address <= 0x5FFF){
         ram_bank_num = value & 0xF;
         return;
     }
