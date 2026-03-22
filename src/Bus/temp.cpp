@@ -1,0 +1,211 @@
+#include "Bus.h"
+#include <iostream>
+#include <iomanip>
+
+Bus::Bus(){
+        vram = std::vector<uint8_t>(0x2000, 0);
+        wram = std::vector<uint8_t>(0x2000, 0);
+        hram = std::vector<uint8_t>(0x80, 0);
+        io_registers = new IO_Registers();
+        OAM_memory = std::vector<uint8_t>(0xA0, 0);
+        joypad = Joypad();
+}
+
+void Bus::connectCartridge(std::string fileString){
+    std::ifstream romFile(fileString, std::ios::binary);
+    char buffer[0x14F];
+
+    romFile.read(buffer, 0x14F);
+
+    uint8_t Cartridge_type = buffer[0x147];
+
+    romFile.close();
+
+    if(Cartridge_type == 0x00){
+        cartridge =  std::make_unique<NoMBC>();
+    }else if(Cartridge_type >= 0x01 && Cartridge_type <= 0x03){
+        cartridge = std::make_unique<MBC1>();
+    }else if(Cartridge_type >= 0x0F && Cartridge_type <= 0x13){
+        cartridge = std::make_unique<MBC5>();
+    }else if(Cartridge_type >= 0x19 && Cartridge_type <= 0x1E){
+        cartridge = std::make_unique<MBC5>();
+    }else{
+        std::cout << "Cartridge Not Implemented" << std::endl;
+        exit(1);
+    }
+
+    cartridge->loadROM(fileString);
+}
+
+uint8_t Bus::read(uint16_t address) const{
+    // reading from the cartridge
+    if(address <= 0x7FFF){
+        return cartridge->read(address);
+    }
+
+    // reading from the video ram
+    if(address <= 0x9FFF){
+        return vram[address-0x8000];
+    }
+
+    // reading from the cartridge ram
+    if(address <= 0xBFFF){
+        return cartridge->read(address);
+    }
+
+    // reading from the work ram
+    if(address <= 0xDFFF){
+        return wram[address-0xC000];
+    }
+
+    // echo ram (maps to wram, nintendo forbids the use of this area)
+    if(address <= 0xFDFF){
+        return wram[(address & 0x1FFF)];
+    }
+
+    // reading from the OAM
+    if(address <= 0xFE9F){
+        return OAM_memory[address-0xFE00];
+    }
+
+    // not usable area
+    if(address <= 0xFEFF){
+        return 0xFF;
+    }
+
+    // reading from the IO Registers
+    if(address <= 0xFF7F){
+        // reading from the joypad register
+        if(address == 0xFF00){
+            return joypad.read();
+        }
+        // reading from the timer registers
+        if(address >= 0xFF04 && address <= 0xFF07){
+            return timer.read(address);
+        }
+        return io_registers->read(address-0xFF00);
+    }
+
+    // reading from the hram
+    if(address <= 0xFFFE){
+        return hram[address-0xFF80];
+    }
+
+    // reading the IE register 
+    return IE_Register;
+
+    std::cout << "Attempted to read at an unknown location: " << (int)address << std::endl;
+    exit(1);
+}
+
+uint16_t Bus::read16(uint16_t address) const{
+    uint16_t value = read(address);
+    value |= (read(address+1) << 8);
+    return value;
+}
+
+void Bus::write(uint16_t address, uint8_t value){
+    // writing to the cartridge ROM
+    if(address <= 0x7FFF){
+        cartridge->write(address, value);
+        return;
+    }
+
+    // writing to the VRAM
+    if(address <= 0x9FFF){
+        vram[address-0x8000] = value;
+        return;
+    }
+
+    // writing to the cartridge RAM
+    if(address <= 0xBFFF){
+        cartridge->write(address, value);
+        return;
+    }
+
+    // writing to the WRAM
+    if(address <= 0xDFFF){
+        wram[address-0xC000] = value;
+        return;
+    }
+
+    // writing to the ECHO ram
+    if(address <= 0xFDFF){
+        wram[address & 0x1FFF] = value;
+        return;
+    }
+
+    // writing to the OAM
+    if(address <= 0xFE9F){
+        OAM_memory[address-0xFE00] = value;
+        return;
+    }
+    
+    // not usable
+    if(address <= 0xFEFF){
+        return;
+    }
+
+    // writing to the I/O Registers
+    if(address <= 0xFF7F){
+        if(address == 0xFF00){
+            joypad.write(value);
+        }
+        if(address >= 0xFF04 && address <= 0xFF07){
+            timer.write(address, value);
+            return;
+        }
+        if(address == 0xFF46){
+            start_DMA_transfer = true;
+        }
+        io_registers->write(address-0xFF00, value);
+        return;
+    }
+    
+    // writing to the HRAM
+    if(address <= 0xFFFE){
+        hram[address-0xFF80] = value;
+        return;
+    }
+
+    // writing to the IE Register
+    IE_Register = value;
+    return;
+
+    std::cout << "Attempted to write at an unknown locatiaon: " <<  (int)address << std::endl;
+    exit(1);
+}
+
+void Bus::write16(uint16_t address, uint16_t value){
+    write(address, value & 0xFF);
+    write(address+1, value >> 8);
+}
+
+void Bus::stepTimer(uint8_t steps){
+    bool overFlow = timer.step(steps);
+    if(overFlow){
+        uint8_t IF = read(0xFF0F);
+        IF |= 0x4;
+        write(0xFF0F, IF);
+    }
+    if(start_DMA_transfer){
+        uint16_t source = read(0xFF46) << 8;
+        for(int i = 0; i < steps; i++){
+            uint8_t sourceValue = read(source+OAM_DMA_pointer);
+            write(0xFE00+OAM_DMA_pointer, sourceValue);
+            OAM_DMA_pointer++;
+            if(OAM_DMA_pointer > 0x9F){
+                OAM_DMA_pointer = 0;
+                start_DMA_transfer = false;
+            }
+        }
+    }
+}
+
+void Bus::processJoyPadInput(SDL_Event& event){
+    if(joypad.processButtonEvent(event)){
+        uint8_t IF = read(0xFF0F);
+        IF |= 0x10;
+        write(0xFF0F, IF);
+    }
+}

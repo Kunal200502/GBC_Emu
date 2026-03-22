@@ -38,61 +38,75 @@ void Bus::connectCartridge(std::string fileString){
 }
 
 uint8_t Bus::read(uint16_t address) const{
-    // reading from the cartridge
-    if(address <= 0x7FFF){
-        return cartridge->read(address);
-    }
+    switch(address & 0xF000){
+        // Reading from the Cartridge ROM
+        case 0x0000: { return cartridge->read(address); }
+        case 0x1000: { return cartridge->read(address); }
+        case 0x2000: { return cartridge->read(address); }
+        case 0x3000: { return cartridge->read(address); }
+        case 0x4000: { return cartridge->read(address); }
+        case 0x5000: { return cartridge->read(address); }
+        case 0x6000: { return cartridge->read(address); }
+        case 0x7000: { return cartridge->read(address); }
 
-    // reading from the video ram
-    if(address <= 0x9FFF){
-        return vram[address-0x8000];
-    }
+        // Reading from the VRAM
+        case 0x8000: { return vram[address - 0x8000]; }
+        case 0x9000: { return vram[address - 0x8000]; }
 
-    // reading from the cartridge ram
-    if(address <= 0xBFFF){
-        return cartridge->read(address);
-    }
+        // Reading from the Cartridge RAM
+        case 0xA000: { return cartridge->read(address); }
+        case 0xB000: { return cartridge->read(address); }
 
-    // reading from the work ram
-    if(address <= 0xDFFF){
-        return wram[address-0xC000];
-    }
+        // Reading from the WRAM
+        case 0xC000: { return wram[address - 0xC000]; }
+        case 0xD000: { return wram[address - 0xC000]; }
 
-    // echo ram (maps to wram, nintendo forbids the use of this area)
-    if(address <= 0xFDFF){
-        return wram[(address & 0x1FFF)];
-    }
+        // Reading from the Echo RAM
+        case 0xE000: { return wram[address & 0x1FFF];}
+        case 0xF000: {
+            // Reading from the Echo RAM
+            if(address <= 0xFDFF){
+                return wram[address & 0x1FFF];
+            }
+            switch(address & 0xFF00){
+                case 0xFE00: {
+                    // Reading from the OAM Memory
+                    if(address <= 0xFE9F){
+                        return OAM_memory[address - 0xFE00];
+                    }
 
-    // reading from the OAM
-    if(address <= 0xFE9F){
-        return OAM_memory[address-0xFE00];
-    }
+                    // Not Usable area
+                    return 0xFF;
+                }
+                case 0xFF00: {
+                    // Reading from the IO register
+                    if(address <= 0xFF7F){
+                        switch(address){
+                            // reading from the joypad register
+                            case 0xFF00: { return joypad.read(); }
+                            
+                            // reading from the timer registers
+                            case 0xFF04: { return timer.read(address); }
+                            case 0xFF05: { return timer.read(address); }
+                            case 0xFF06: { return timer.read(address); }
+                            case 0xFF07: { return timer.read(address); }
+                            default: {
+                                return io_registers->read(address-0xFF00);
+                            }
+                        }
+                    }
 
-    // not usable area
-    if(address <= 0xFEFF){
-        return 0xFF;
-    }
+                    // reading from the hram
+                    if(address <= 0xFFFE){
+                        return hram[address-0xFF80];
+                    }
 
-    // reading from the IO Registers
-    if(address <= 0xFF7F){
-        // reading from the joypad register
-        if(address == 0xFF00){
-            return joypad.read();
+                    // reading the IE register 
+                    return IE_Register;
+                }
+            }
         }
-        // reading from the timer registers
-        if(address >= 0xFF04 && address <= 0xFF07){
-            return timer.read(address);
-        }
-        return io_registers->read(address-0xFF00);
     }
-
-    // reading from the hram
-    if(address <= 0xFFFE){
-        return hram[address-0xFF80];
-    }
-
-    // reading the IE register 
-    return IE_Register;
 
     std::cout << "Attempted to read at an unknown location: " << (int)address << std::endl;
     exit(1);
@@ -105,72 +119,83 @@ uint16_t Bus::read16(uint16_t address) const{
 }
 
 void Bus::write(uint16_t address, uint8_t value){
-    // writing to the cartridge ROM
-    if(address <= 0x7FFF){
-        cartridge->write(address, value);
-        return;
-    }
+    switch(address & 0xF000){
+        // writing to the cartridge ROM
+        case 0x0000: { cartridge->write(address, value); return; }
+        case 0x1000: { cartridge->write(address, value); return; }
+        case 0x2000: { cartridge->write(address, value); return; }
+        case 0x3000: { cartridge->write(address, value); return; }
+        case 0x4000: { cartridge->write(address, value); return; }
+        case 0x5000: { cartridge->write(address, value); return; }
+        case 0x6000: { cartridge->write(address, value); return; }
+        case 0x7000: { cartridge->write(address, value); return; }
 
-    // writing to the VRAM
-    if(address <= 0x9FFF){
-        vram[address-0x8000] = value;
-        return;
-    }
+        // Writing to the VRAM
+        case 0x8000: { vram[address - 0x8000] = value; return; }
+        case 0x9000: { vram[address - 0x8000] = value; return; }
 
-    // writing to the cartridge RAM
-    if(address <= 0xBFFF){
-        cartridge->write(address, value);
-        return;
-    }
+        // Writing to the cartridge RAM
+        case 0xA000: { cartridge->write(address, value); return; }
+        case 0xB000: { cartridge->write(address, value); return; }
 
-    // writing to the WRAM
-    if(address <= 0xDFFF){
-        wram[address-0xC000] = value;
-        return;
-    }
+        // Writing to the WRAM
+        case 0xC000: { wram[address - 0xC000] = value; return; }
+        case 0xD000: { wram[address - 0xC000] = value; return; }
 
-    // writing to the ECHO ram
-    if(address <= 0xFDFF){
-        wram[address & 0x1FFF] = value;
-        return;
-    }
+        // Writing to the ECHO RAM
+        case 0xE000: { wram[address & 0x1FFF] = value; return; }
 
-    // writing to the OAM
-    if(address <= 0xFE9F){
-        OAM_memory[address-0xFE00] = value;
-        return;
-    }
-    
-    // not usable
-    if(address <= 0xFEFF){
-        return;
-    }
+        case 0xF000: {
+            // Writing to the ECHO RAM
+            if(address <= 0xFDFF){
+                wram[address & 0x1FFF] = value;
+                return;
+            }
+            switch(address & 0xFF00){
+                case 0xFE00:{
+                    // writing to the OAM
+                    if(address <= 0xFE9F){
+                        OAM_memory[address-0xFE00] = value;
+                    }
+                    // ignoring the not usable area
+                    return;
+                }
+                case 0xFF00:{
+                    // writing to the I/O Registers
+                    if(address <= 0xFF7F){
+                        switch(address){
+                            // writing to the joypad register
+                            case 0xFF00: { joypad.write(value); return; }
 
-    // writing to the I/O Registers
-    if(address <= 0xFF7F){
-        if(address == 0xFF00){
-            joypad.write(value);
-        }
-        if(address >= 0xFF04 && address <= 0xFF07){
-            timer.write(address, value);
+                            // writing to the timer registers
+                            case 0xFF04: { timer.write(address, value); return; }
+                            case 0xFF05: { timer.write(address, value); return; }
+                            case 0xFF06: { timer.write(address, value); return; }
+                            case 0xFF07: { timer.write(address, value); return; }
+                            default: {
+                                if(address == 0xFF46){
+                                    start_DMA_transfer = true;
+                                }
+                                io_registers->write(address-0xFF00, value);
+                                return;
+                            }
+                        }
+                    }
+                    
+                    // writing to the HRAM
+                    if(address <= 0xFFFE){
+                        hram[address-0xFF80] = value;
+                        return;
+                    }
+
+                    // writing to the IE Register
+                    IE_Register = value;
+                    return;
+                }
+            }
             return;
         }
-        if(address == 0xFF46){
-            start_DMA_transfer = true;
-        }
-        io_registers->write(address-0xFF00, value);
-        return;
     }
-    
-    // writing to the HRAM
-    if(address <= 0xFFFE){
-        hram[address-0xFF80] = value;
-        return;
-    }
-
-    // writing to the IE Register
-    IE_Register = value;
-    return;
 
     std::cout << "Attempted to write at an unknown locatiaon: " <<  (int)address << std::endl;
     exit(1);
