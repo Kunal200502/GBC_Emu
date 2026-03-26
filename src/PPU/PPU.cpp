@@ -103,7 +103,7 @@ void PPU::OAM_scan(){
     }
 }
 
-void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
+void PPU::fetcher(){
     switchFetcherState = !switchFetcherState;
     switch(fetcherState){
         case GET_TILE: {
@@ -111,13 +111,30 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
                 fetcherState = GET_TILE_DATA_LOW;
                 break;
             }
+
+            uint8_t LCDC = getLCDC();
+            uint8_t WX = getWX();
+            uint8_t WY = getWY();
+
+            // checking if the tile is a window tile or a background tile
+            bool window_tile = false;
+            if(checkBit(LCDC, 5) && getLY() >= WY && pixelCol >= (WX-7)){
+                window_tile = true;
+            }
+
+            // checking the tile map address (false = 0x9800, true = 0x9C00)
+            bool tileMap = false; 
+            if((checkBit(LCDC, 3) && !window_tile) || (checkBit(LCDC, 6) && window_tile)){
+                tileMap = true;
+            }
+            
             uint16_t tileMapBase = tileMap ? 0x9C00 : 0x9800;
 
             fetcherY = getLY();
 
             uint8_t tileY;
             uint8_t tileX;
-            if(windowTile){
+            if(window_tile){
                 tileY = fetcherY/8;
                 tileX = fetcherX;
             }else{
@@ -134,6 +151,12 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
                 fetcherState = GET_TILE_DATA_HIGH;
                 break;
             }
+
+            uint8_t LCDC = getLCDC();
+
+            // checking the adressing mode (true = 0x8000, false = 0x8800)
+            bool addressingMode = checkBit(LCDC, 4);
+
             uint16_t tileAddress;
             uint8_t lineInTile = (fetcherY+getSCY())%8;
             if(addressingMode){
@@ -142,7 +165,6 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
                 int8_t signedIndex = tileIndex;
                 tileAddress = 0x9000 + 16*signedIndex + (lineInTile*2);
             }
-            tileLowFilled = true;
             tileLow = bus->read(tileAddress);
             break;
         }
@@ -151,6 +173,12 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
                 fetcherState = SLEEP;
                 break;
             }
+
+            uint8_t LCDC = getLCDC();
+
+            // checking the adressing mode (true = 0x8000, false = 0x8800)
+            bool addressingMode = checkBit(LCDC, 4);
+
             uint16_t tileAddress;
             uint8_t lineInTile = (fetcherY+getSCY())%8;
             if(addressingMode){
@@ -159,8 +187,15 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
                 int8_t signedIndex = tileIndex;
                 tileAddress = 0x9000 + 16*signedIndex + (lineInTile*2)+1;
             }
-            tileHighFilled = true;
             tileHigh = bus->read(tileAddress);
+
+            // filling the FIFO with pixels
+            for(int i = 7; i >= 0; i--){
+                uint8_t pixel = (((tileHigh >> i) & 1) << 1)| ((tileLow >> i) & 1);
+                fifoPixel.push(pixel);
+            }
+            fetcherX++;
+
             break;
         }
         case SLEEP:{
@@ -169,15 +204,6 @@ void PPU::fetcher(bool windowTile, bool tileMap, bool addressingMode){
             }
             break;
         }
-    }
-    if(tileLowFilled && tileHighFilled){
-        for(int i = 7; i >= 0; i--){
-            uint8_t pixel = (((tileHigh >> i) & 1) << 1)| ((tileLow >> i) & 1);
-            fifoPixel.push(pixel);
-        }
-        fetcherX++;
-        tileHighFilled = false;
-        tileLowFilled = false;
     }
 }
 
@@ -226,16 +252,8 @@ void PPU::emulateCycle(){
             // OAM scan
             OAM_scan();
             if(dots == 80){
-                // if(oam_buffer->size != 0){
-                //     while(oam_buffer->size != 0){
-                //         std::cout << (int)oam_buffer->pop().second << " ";
-                //     }
-                //     std::cout << std::endl;
-                // }
                 fetcherX = 0;
                 fetcherState = GET_TILE;
-                tileHighFilled = false;
-                tileLowFilled = false;
                 switchFetcherState = true;
                 mode = 3;
                 scxDiscard = 0;
@@ -252,27 +270,8 @@ void PPU::emulateCycle(){
             if(fetchingSprite){
                 spriteFetcher(oam_buffer->pop().first);
             }
-            
-            uint8_t LCDC = getLCDC();
-            uint8_t WX = getWX();
-            uint8_t WY = getWY();
 
-            // checking if the tile is a window tile or a background tile
-            bool window_tile = false;
-            if(checkBit(LCDC, 5) && getLY() >= WY && pixelCol >= (WX-7)){
-                window_tile = true;
-            }
-
-            // checking the tile map address (false = 0x9800, true = 0x9C00)
-            bool tileMap = false; 
-            if((checkBit(LCDC, 3) && !window_tile) || (checkBit(LCDC, 6) && window_tile)){
-                tileMap = true;
-            }
-
-            // checking the adressing mode (true = 0x8000, false = 0x8800)
-            bool addressingMode = checkBit(LCDC, 4);
-
-            fetcher(window_tile, tileMap, addressingMode);
+            fetcher();
 
             uint8_t popPixel = fifoPixel.pop();
             

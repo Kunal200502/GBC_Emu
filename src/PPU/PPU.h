@@ -68,11 +68,9 @@ class PPU{
         uint8_t tileNumber = 0;
         uint8_t tileIndex = 0;
 
-        bool tileLowFilled = false;
-        bool tileHighFilled = false;
         uint8_t tileLow = 0;
         uint8_t tileHigh = 0;
-        void fetcher(bool windowTile, bool tileMap, bool addressingMode);
+        void fetcher();
 
         void spriteFetcher(uint8_t);
 
