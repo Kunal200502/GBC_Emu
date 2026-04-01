@@ -11,6 +11,16 @@ Bus::Bus(){
         joypad = Joypad();
 }
 
+void Bus::request_interrupt(InterruptType interrupt){
+    switch(interrupt){
+        case V_Blank_Interrupt: { IF_Register |= 0x1; break; }
+        case STAT_Interrupt: { IF_Register |= 0x2; break; }
+        case Timer_Interrupt: { IF_Register |= 0x4; break; }
+        case Serial_Interrupt: { IF_Register |= 0x8; break; }
+        case Joypad_Interrupt: { IF_Register |= 0x10; break; }
+    }
+}
+
 void Bus::connectCartridge(std::string fileString){
     std::ifstream romFile(fileString, std::ios::binary);
     char buffer[0x14F];
@@ -90,6 +100,10 @@ uint8_t Bus::read(uint16_t address) const{
                             case 0xFF05: { return timer.read(address); }
                             case 0xFF06: { return timer.read(address); }
                             case 0xFF07: { return timer.read(address); }
+
+                            // reading from IF register
+                            case 0xFF0F: { return IF_Register | 0xE0; }
+
                             default: {
                                 return io_registers->read(address-0xFF00);
                             }
@@ -172,6 +186,10 @@ void Bus::write(uint16_t address, uint8_t value){
                             case 0xFF05: { timer.write(address, value); return; }
                             case 0xFF06: { timer.write(address, value); return; }
                             case 0xFF07: { timer.write(address, value); return; }
+
+                            // writing to the IF register
+                            case 0xFF0F: { IF_Register = value; return; }
+
                             default: {
                                 if(address == 0xFF46){
                                     start_DMA_transfer = true;
@@ -209,9 +227,7 @@ void Bus::write16(uint16_t address, uint16_t value){
 void Bus::stepTimer(uint8_t steps){
     bool overFlow = timer.step(steps);
     if(overFlow){
-        uint8_t IF = read(0xFF0F);
-        IF |= 0x4;
-        write(0xFF0F, IF);
+        request_interrupt(Timer_Interrupt);
     }
     if(start_DMA_transfer){
         uint16_t source = read(0xFF46) << 8;
@@ -229,8 +245,6 @@ void Bus::stepTimer(uint8_t steps){
 
 void Bus::processJoyPadInput(SDL_Event& event){
     if(joypad.processButtonEvent(event)){
-        uint8_t IF = read(0xFF0F);
-        IF |= 0x10;
-        write(0xFF0F, IF);
+        request_interrupt(Joypad_Interrupt);
     }
 }

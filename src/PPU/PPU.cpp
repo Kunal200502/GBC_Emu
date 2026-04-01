@@ -311,9 +311,7 @@ void PPU::emulateCycle(){
                     oam_buffer->clear();
                     oamObjectNum = 0;
                 }else{
-                    uint8_t IF = bus->read(0xFF0F);
-                    IF |= 1;
-                    bus->write(0xFF0F, IF);
+                    bus->request_interrupt(V_Blank_Interrupt); 
                     mode = 1;
                 }
             }

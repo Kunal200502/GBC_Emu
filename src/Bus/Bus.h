@@ -8,7 +8,13 @@
 #include <memory>
 #include <iomanip>
 
-class Cartridge;
+enum InterruptType{
+    V_Blank_Interrupt,
+    STAT_Interrupt,
+    Timer_Interrupt,
+    Serial_Interrupt,
+    Joypad_Interrupt
+};
 
 class Bus{
     private:
@@ -19,6 +25,7 @@ class Bus{
         IO_Registers* io_registers; // 0xFF00 - 0xFF7F
         std::vector<uint8_t> OAM_memory; // 0xFE00 - 0xFE9F
         uint8_t IE_Register = 0; // 0xFFFF
+        uint8_t IF_Register = 0xE1; // 0xFF0F
 
         Joypad joypad;
         Timer timer;
@@ -27,6 +34,7 @@ class Bus{
         uint8_t OAM_DMA_pointer = 0;
     public:
         Bus();
+        void request_interrupt(InterruptType);
         uint8_t read(uint16_t) const;
         uint16_t read16(uint16_t) const;
         void write(uint16_t, uint8_t);
