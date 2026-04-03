@@ -38,6 +38,8 @@ class PPU{
         uint8_t mode = 2;
         uint16_t dots = 0;
 
+        int8_t clock_sync = 0;
+
         Bus* bus;
         FIFO_Pixel fifoPixel;
         FIFO_Pixel spriteFIFOPixel;

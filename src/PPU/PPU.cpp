@@ -130,17 +130,18 @@ uint8_t PPU::getWX(){
 }
 
 void PPU::OAM_scan(){
-    if((dots % 2) == 1){
-        oam_scan_buffer = bus->read(0xFE00+oamObjectNum*4); // reading the Y index value (1st byte) of the object
-    }else{
-        uint8_t spriteY = oam_scan_buffer-16;
-        uint8_t obj_height = 8 + 8*((getLCDC() >> 2) & 1);
-        uint8_t LY = getLY();
-        if(LY >= spriteY && LY < spriteY+obj_height){
-            oam_buffer->push({oamObjectNum, bus->read(0xFE00+oamObjectNum*4+1)}); // storing the index of the object in OAM (0 - 39)
-        }
-        oamObjectNum++;
+    dots += 2;
+    clock_sync -= 2;
+
+    oam_scan_buffer = bus->read(0xFE00+oamObjectNum*4); // reading the Y index value (1st byte) of the object
+    
+    uint8_t spriteY = oam_scan_buffer-16;
+    uint8_t obj_height = 8 + 8*((getLCDC() >> 2) & 1);
+    uint8_t LY = getLY();
+    if(LY >= spriteY && LY < spriteY+obj_height){
+        oam_buffer->push({oamObjectNum, bus->read(0xFE00+oamObjectNum*4+1)}); // storing the index of the object in OAM (0 - 39)
     }
+    oamObjectNum++;
 }
 
 void PPU::fetcher(){
@@ -280,13 +281,7 @@ void PPU::spriteFetcher(uint8_t objectNum){
 }
 
 void PPU::emulateCycle(){
-    if(!checkBit(getLCDC(), 7)){
-        mode = 2;
-        dots = 0;
-        bus->write(0xFF44, 0);
-        return;
-    }
-    dots++;
+    
     switch(mode){
         case 2:{
             // OAM scan
@@ -297,6 +292,9 @@ void PPU::emulateCycle(){
             break;
         }
         case 3:{
+            dots++;
+            clock_sync--;
+
             if(oam_buffer->check(pixelCol)){
                 fetchingSprite = true;
             }
@@ -334,6 +332,14 @@ void PPU::emulateCycle(){
             break;
         }
         case 0:{
+            uint8_t steps = clock_sync;
+            if((456 - dots) < steps){
+                steps = 456 - dots;
+            }
+
+            dots += steps;
+            clock_sync -= steps;
+
             if(dots == 456){
                 dots = 0;
                 uint8_t LY = getLY();
@@ -356,6 +362,14 @@ void PPU::emulateCycle(){
             break;
         }
         case 1:{
+            uint8_t steps = clock_sync;
+            if((456 - dots) < steps){
+                steps = 456 - dots;
+            }
+
+            dots += steps;
+            clock_sync -= steps;
+
             uint8_t LY = getLY();
             if(LY <= 153){
                 if(dots == 456){
@@ -376,7 +390,19 @@ void PPU::emulateCycle(){
 }
 
 void PPU::step(uint8_t cycles){
-    for(int i = 0; i<cycles; i++){
+    if(!checkBit(getLCDC(), 7)){
+        dots = 0;
+        clock_sync = 0;
+        switch_mode_2();
+        bus->write(0xFF44, 0);
+        return;
+    }
+
+    clock_sync += cycles;
+    while(clock_sync > 0){
         emulateCycle();
     }
+    // for(int i = 0; i<cycles; i++){
+    //     emulateCycle();
+    // }
 }
