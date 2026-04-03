@@ -60,6 +60,46 @@ PPU::PPU(Bus* b){
     oam_buffer = new OAM_Buffer();
 }
 
+// mode switcher function
+void PPU::switch_mode_3(){
+    fetcherX = 0;
+    fetcherState = GET_TILE;
+    switchFetcherState = true;
+    mode = 3;
+    scxDiscard = 0;
+    pixelCol = 0;
+    fifoPixel.clear();
+}
+
+void PPU::switch_mode_2(){
+    mode = 2;
+    oam_buffer->clear();
+    oamObjectNum = 0;
+
+    // requesting STAT interrupt
+    if(checkBit(bus->read(0xFF41), 5)){
+        bus->request_interrupt(STAT_Interrupt);
+    }
+}
+
+void PPU::switch_mode_1(){
+    mode = 1;
+
+    // requesting STAT interrupt
+    if(checkBit(bus->read(0xFF41), 4)){
+        bus->request_interrupt(STAT_Interrupt);
+    }
+}
+
+void PPU::switch_mode_0(){
+    mode = 0;
+
+    // requesting STAT interrupt
+    if(checkBit(bus->read(0xFF41), 3)){
+        bus->request_interrupt(STAT_Interrupt);
+    }
+}
+
 uint8_t PPU::getLCDC(){
     return bus->read(0xFF40);
 }
@@ -252,13 +292,7 @@ void PPU::emulateCycle(){
             // OAM scan
             OAM_scan();
             if(dots == 80){
-                fetcherX = 0;
-                fetcherState = GET_TILE;
-                switchFetcherState = true;
-                mode = 3;
-                scxDiscard = 0;
-                pixelCol = 0;
-                fifoPixel.clear();
+                switch_mode_3();
             }
             break;
         }
@@ -294,7 +328,7 @@ void PPU::emulateCycle(){
             pixelCol++;
 
             if(pixelCol >= 160){
-                mode = 0;
+                switch_mode_0();
             }
 
             break;
@@ -305,14 +339,17 @@ void PPU::emulateCycle(){
                 uint8_t LY = getLY();
                 uint8_t newLY = LY+1;
                 bus->write(0xFF44, newLY);
+
+                // requesting STAT interrupt on LY == LYC
+                if(checkBit(bus->read(0xFF41), 6) && bus->read(0xFF45) == newLY){
+                    bus->request_interrupt(STAT_Interrupt);
+                }
                 
                 if(newLY <= 143){
-                    mode = 2;
-                    oam_buffer->clear();
-                    oamObjectNum = 0;
+                    switch_mode_2();
                 }else{
                     bus->request_interrupt(V_Blank_Interrupt); 
-                    mode = 1;
+                    switch_mode_1();
                 }
             }
             
@@ -328,9 +365,10 @@ void PPU::emulateCycle(){
                 return;
             }
             dots = 0;
-            mode = 2;
-            oam_buffer->clear();
-            oamObjectNum = 0;
+
+            // switching mode to 2
+            switch_mode_2();
+
             bus->write(0xFF44, 0);
             break;
         }

@@ -43,6 +43,12 @@ class PPU{
         FIFO_Pixel spriteFIFOPixel;
         LCD_Renderer* renderer;
 
+        // mode switching logic
+        void switch_mode_3();
+        void switch_mode_2();
+        void switch_mode_1();
+        void switch_mode_0();
+
         uint8_t getLCDC();
         uint8_t getLY();
         uint8_t getLYC();
@@ -62,7 +68,7 @@ class PPU{
         // fetcher logic
         uint8_t fetcherX = 0;
         uint8_t fetcherY = 0;
-        uint16_t mode3Dots = 0;
+        
         enum FetcherState fetcherState  = GET_TILE;
         bool switchFetcherState = true;
         uint8_t tileNumber = 0;
