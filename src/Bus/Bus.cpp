@@ -2,6 +2,22 @@
 #include <iostream>
 #include <iomanip>
 
+BusSnapshot::BusSnapshot(std::vector<uint8_t> vram_state, std::vector<uint8_t> wram_state, std::vector<uint8_t> hram_state, 
+    IO_Registers* io_registers_state,  std::vector<uint8_t> OAM_memory_state, uint8_t IE_Register_state, uint8_t IF_Register_state, 
+    Joypad joypad_state, Timer timer_state, bool start_DMA_transfer_state, uint8_t OAM_DMA_pointer_state){
+        vram = vram_state;
+        wram = wram_state;
+        hram = hram_state;
+        io_registers = io_registers_state->createSnapshot();
+        OAM_memory = OAM_memory_state;
+        IE_Register = IE_Register_state;
+        IF_Register = IF_Register_state;
+        joypad = joypad_state.create_Joypad_Snapshot();
+        timer = timer_state.createSnapshot();
+        start_DMA_transfer = start_DMA_transfer_state;
+        OAM_DMA_pointer = OAM_DMA_pointer_state;
+}
+
 Bus::Bus(){
         vram = std::vector<uint8_t>(0x2000, 0);
         wram = std::vector<uint8_t>(0x2000, 0);
@@ -247,4 +263,24 @@ void Bus::processJoyPadInput(SDL_Event& event){
     if(joypad.processButtonEvent(event)){
         request_interrupt(Joypad_Interrupt);
     }
+}
+
+BusSnapshot Bus::createSnapshot(){
+    BusSnapshot bus_snapshot(vram, wram, hram, io_registers, OAM_memory, IE_Register, IF_Register, joypad, timer, 
+    start_DMA_transfer, OAM_DMA_pointer);
+    return bus_snapshot;
+}
+
+void Bus::restoreSnapshot(BusSnapshot* snapshot){
+    vram = snapshot->vram;
+    wram = snapshot->wram;
+    hram = snapshot->hram;
+    io_registers->restoreSnapshot(&snapshot->io_registers);
+    OAM_memory = snapshot->OAM_memory;
+    IE_Register = snapshot->IE_Register;
+    IF_Register = snapshot->IF_Register;
+    joypad.restore_Joypad_Snapshot(&snapshot->joypad);
+    timer.restoreSnapshot(&snapshot->timer);
+    start_DMA_transfer = snapshot->start_DMA_transfer;
+    OAM_DMA_pointer = snapshot->OAM_DMA_pointer;
 }

@@ -1,5 +1,39 @@
 #include "PPU.h"
 
+PPUSnapshot::PPUSnapshot(
+    uint8_t mode_state, uint16_t dots_state, int8_t clock_sync_state,
+    FIFO_Pixel* fifoPixel_state, FIFO_Pixel* spriteFIFOPixel_state,
+    LCD_Renderer* renderer_state, OAM_Buffer* OAM_Buffer_state,
+    uint8_t oamObjectNum_state, uint8_t oam_scan_buffer_state, uint16_t pixelCol_state,
+    uint8_t fetcherX_state, uint8_t fetcherY_state, enum FetcherState fetcherState_state,
+    bool switchFetcherState_state, uint8_t tileNumber_state, uint8_t tileIndex_state,
+    uint8_t tileLow_state, uint8_t tileHigh_state, uint8_t scxDiscard_state, uint8_t spriteTile_state,
+    bool fetchingSprite_state
+){
+    mode = mode_state,
+    dots = dots_state,
+    clock_sync = clock_sync_state;
+    fifoPixel = fifoPixel_state->create_FIFO_Pixel_Snapshot();
+    spriteFIFOPixel = spriteFIFOPixel_state->create_FIFO_Pixel_Snapshot();
+    renderer = renderer_state->create_LCD_Renderer_Snapshot();
+    oam_buffer = OAM_Buffer_state->createSnapshot();
+    oamObjectNum = oamObjectNum_state;
+    oam_scan_buffer = oam_scan_buffer_state;
+    pixelCol = pixelCol_state;
+    fetcherX = fetcherX_state;
+    fetcherY = fetcherY_state;
+    fetcherState = fetcherState_state;
+    switchFetcherState = switchFetcherState_state;
+    tileNumber = tileNumber_state;
+    tileIndex = tileIndex_state;
+    tileLow = tileLow_state;
+    tileHigh = tileHigh_state;
+    scxDiscard = scxDiscard_state;
+    spriteTile = spriteTile_state;
+    fetchingSprite = fetchingSprite_state;
+}
+
+
 uint8_t reverseNum(uint8_t num){
     uint8_t result = 0;
     for(int i = 0; i<8; i++){
@@ -7,44 +41,6 @@ uint8_t reverseNum(uint8_t num){
         num = num >> 1;
     }
     return result;
-}
-
-OAM_Buffer::OAM_Buffer(){
-    size = 0;
-}
-
-void OAM_Buffer::push(std::pair<uint8_t, uint8_t> object){
-    if(size == 10){
-        return;
-    }
-    pq.push(object);
-    size++;
-}
-
-bool OAM_Buffer::check(uint8_t pixelCol){
-    if(size == 0){
-        return false;
-    }
-    while(size != 0 && pq.top().second < pixelCol){
-        pq.pop();
-        size--;
-    }
-    uint8_t x = pq.top().second;
-    return (x-8 <= pixelCol && x > pixelCol);
-}
-
-void OAM_Buffer::clear(){
-    while(!pq.empty()){
-        pq.pop();
-    }
-    size = 0;
-}
-
-std::pair<uint8_t, uint8_t> OAM_Buffer::pop(){
-    std::pair<uint8_t, uint8_t> output = pq.top();
-    pq.pop();
-    size--;
-    return output;
 }
 
 
@@ -402,7 +398,37 @@ void PPU::step(uint8_t cycles){
     while(clock_sync > 0){
         emulateCycle();
     }
-    // for(int i = 0; i<cycles; i++){
-    //     emulateCycle();
-    // }
+}
+
+PPUSnapshot PPU::createSnapshot(){
+    PPUSnapshot ppu_snapshot(
+        mode, dots, clock_sync, &fifoPixel, &spriteFIFOPixel, renderer, oam_buffer, oamObjectNum, oam_scan_buffer, pixelCol,
+        fetcherX, fetcherY, fetcherState, switchFetcherState, tileNumber, tileIndex, tileLow, tileHigh, scxDiscard, 
+        spriteTile, fetchingSprite
+    );
+    return ppu_snapshot;
+}
+
+void PPU::restoreSnapshot(PPUSnapshot* ppu_snapshot){
+    mode = ppu_snapshot->mode;
+    dots = ppu_snapshot->dots;
+    clock_sync = ppu_snapshot->clock_sync;
+    fifoPixel.restore_FIFO_Pixel_Snapshot(&ppu_snapshot->fifoPixel);
+    spriteFIFOPixel.restore_FIFO_Pixel_Snapshot(&ppu_snapshot->spriteFIFOPixel);
+    renderer->restore_LCD_Renderer_Snapshot(&ppu_snapshot->renderer);
+    oam_buffer->restoreSnapshot(&ppu_snapshot->oam_buffer);
+    oamObjectNum = ppu_snapshot->oamObjectNum;
+    oam_scan_buffer = ppu_snapshot->oam_scan_buffer;
+    pixelCol = ppu_snapshot->pixelCol;
+    fetcherX = ppu_snapshot->fetcherX;
+    fetcherY = ppu_snapshot->fetcherY;
+    fetcherState = ppu_snapshot->fetcherState;
+    switchFetcherState = ppu_snapshot->switchFetcherState;
+    tileNumber = ppu_snapshot->tileNumber;
+    tileIndex = ppu_snapshot->tileIndex;
+    tileLow = ppu_snapshot->tileLow;
+    tileHigh = ppu_snapshot->tileHigh;
+    scxDiscard = ppu_snapshot->scxDiscard;
+    spriteTile = ppu_snapshot->spriteTile;
+    fetchingSprite = ppu_snapshot->fetchingSprite;
 }

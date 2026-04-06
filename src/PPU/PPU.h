@@ -6,31 +6,76 @@
 #include "LCDRenderer.h"
 #include "FIFOPixel.h"
 #include <queue>
-
-// compare function for the priority queue
-struct Compare{
-    bool operator()(std::pair<uint8_t, uint8_t> a, std::pair<uint8_t, uint8_t> b){
-        return a.second > b.second;
-    }
-};
-
-class OAM_Buffer{
-    private:
-        std::priority_queue<std::pair<uint8_t, uint8_t>, std::vector<std::pair<uint8_t, uint8_t>>, Compare> pq;
-    public:
-        int size;
-        OAM_Buffer();
-        void push(std::pair<uint8_t, uint8_t>);
-        bool check(uint8_t pixelCol);
-        std::pair<uint8_t, uint8_t> pop();
-        void clear();
-};
+#include "OAMBuffer.h"
 
 enum FetcherState{
     GET_TILE,
     GET_TILE_DATA_LOW,
     GET_TILE_DATA_HIGH,
     SLEEP
+};
+
+class PPUSnapshot{
+    public:
+        uint8_t mode;
+        uint16_t dots;
+        int8_t clock_sync;
+
+        FIFO_Pixel_Snapshot fifoPixel;
+        FIFO_Pixel_Snapshot spriteFIFOPixel;
+        LCD_Renderer_Snapshot renderer;
+
+        OAM_Buffer_Snapshot oam_buffer;
+
+        uint8_t oamObjectNum;
+        uint8_t oam_scan_buffer;
+        uint16_t pixelCol;
+
+        uint8_t fetcherX;
+        uint8_t fetcherY;
+
+        enum FetcherState fetcherState;
+        bool switchFetcherState;
+        uint8_t tileNumber;
+        uint8_t tileIndex;
+
+        uint8_t tileLow;
+        uint8_t tileHigh;
+
+        uint8_t scxDiscard;
+
+        uint8_t spriteTile;
+        bool fetchingSprite;
+
+        PPUSnapshot(uint8_t, uint16_t, int8_t, FIFO_Pixel*, 
+            FIFO_Pixel*, LCD_Renderer*, OAM_Buffer*, uint8_t, uint8_t, uint16_t, uint8_t, uint8_t,
+            enum FetcherState, bool, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, bool);
+        PPUSnapshot(){}
+ 
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & mode;
+            ar & dots;
+            ar & clock_sync;
+            ar & fifoPixel;
+            ar & spriteFIFOPixel;
+            ar & renderer;
+            ar & oam_buffer;
+            ar & oamObjectNum;
+            ar & oam_scan_buffer;
+            ar & pixelCol;
+            ar & fetcherX;
+            ar & fetcherY;
+            ar & fetcherState;
+            ar & switchFetcherState;
+            ar & tileNumber;
+            ar & tileIndex;
+            ar & tileLow;
+            ar & tileHigh;
+            ar & scxDiscard;
+            ar & spriteTile;
+            ar & fetchingSprite;
+        }
 };
 
 class PPU{
@@ -84,8 +129,6 @@ class PPU{
 
         uint8_t scxDiscard = 0;
 
-        uint16_t mode1Dots = 1;
-
         void emulateCycle();
 
         // sprite fetching logic
@@ -95,4 +138,6 @@ class PPU{
     public:
         PPU(Bus*);
         void step(uint8_t);
+        PPUSnapshot createSnapshot();
+        void restoreSnapshot(PPUSnapshot*);
 };

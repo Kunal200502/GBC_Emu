@@ -3,6 +3,18 @@
 #include <vector>
 #include <unordered_map>
 
+class IO_Registers_Snapshot{
+    public:
+        std::vector<uint8_t> registers;
+        IO_Registers_Snapshot(std::vector<uint8_t>);
+        IO_Registers_Snapshot(){};
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & registers;
+        }
+};
+
 class IO_Registers{
     private:
         std::vector<uint8_t> registers;
@@ -12,4 +24,6 @@ class IO_Registers{
         IO_Registers();
         uint8_t read(uint16_t);
         void write(uint16_t, uint8_t);
+        IO_Registers_Snapshot createSnapshot();
+        void restoreSnapshot(IO_Registers_Snapshot*);
 };

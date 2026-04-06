@@ -1,6 +1,27 @@
 #include "Cpu.h"
 #include "iostream"
 
+CpuSnapshot::CpuSnapshot(
+    uint8_t A_state, uint8_t B_state, uint8_t C_state, uint8_t D_state, uint8_t E_state, uint8_t H_state, uint8_t L_state,
+    uint16_t SP_state, uint16_t PC_state, uint8_t F_state, 
+    bool IME_state, bool EI_pending_state, uint32_t clock_state
+){
+    A = A_state;
+    B = B_state;
+    C = C_state;
+    D = D_state;
+    E = E_state;
+    H = H_state;
+    L = L_state;
+    SP = SP_state;
+    PC = PC_state;
+    F = F_state;
+    IME = IME_state;
+    EI_pending = EI_pending_state;
+    clock = clock_state;
+}
+
+
 // flag helper methods;
 // zero flag (Z)
 bool Cpu::getZ(){
@@ -369,6 +390,29 @@ void Cpu::clearIFBit(uint8_t bit){
     uint8_t IF = bus->read(0xFF0F);
     res(IF, bit);
     bus->write(0xFF0F, IF);
+}
+
+CpuSnapshot Cpu::create_CPU_snapshot(){
+    CpuSnapshot cpu_snapshot(A, B, C, D, E, H, L, SP, PC, F, IME, EI_pending, clock);
+    return cpu_snapshot;
+}
+
+void Cpu::restore_CPU_snapshot(CpuSnapshot* cpu_snapshot){
+    // registers
+    A = cpu_snapshot->A;
+    B = cpu_snapshot->B;
+    C = cpu_snapshot->C;
+    D = cpu_snapshot->D;
+    E = cpu_snapshot->E;
+    H = cpu_snapshot->H;
+    L = cpu_snapshot->L;
+    F = cpu_snapshot->F;
+
+    SP = cpu_snapshot->SP; // stack pointer
+    PC = cpu_snapshot->PC; // program counter
+    IME = cpu_snapshot->IME;
+    EI_pending = cpu_snapshot->EI_pending;
+    clock = cpu_snapshot->clock;
 }
 
 void Cpu::serviceInterrupt(){

@@ -2,8 +2,7 @@
 A GameBoy Color emulator in C++
 Uses SDL2 library for rendering
 Passes all blargg's cpu tests
-
-
+Saving and loading functionality is very basic for now - only supports NoMBC games
 
 ## Usage
 ### To Build 
@@ -30,3 +29,5 @@ cmake --build .
 | B               | j        | 
 | Select          | i        | 
 | Start           | k        | 
+| Save            | F1       |
+| Load            | F2       |

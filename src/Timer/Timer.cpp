@@ -1,5 +1,17 @@
 #include "Timer.h"
 
+TimerSnapshot::TimerSnapshot(uint16_t dividerRegisterState, bool prevBitState, uint8_t timerCounterState, bool overflowState, uint8_t timerModuloState, uint8_t timerControlState){
+    dividerRegister = dividerRegisterState;
+    prevBit = prevBitState;
+    timerCounter = timerCounterState;
+    overflow = overflowState;
+    timerModulo = timerModuloState;
+    timerControl = timerControlState;
+}
+
+
+
+
 uint8_t Timer::getMuxBitPos(){
     switch(timerControl & 0x3){
         case 1:
@@ -65,4 +77,19 @@ void Timer::write(uint16_t address, uint8_t value){
         case 0xFF06: { timerModulo = value; break; }
         case 0xFF07: { timerControl = value; break; }
     }
+}
+
+
+TimerSnapshot Timer::createSnapshot(){
+    TimerSnapshot timer_snapshot(dividerRegister, prevBit, timerCounter, overflow, timerModulo, timerControl);
+    return timer_snapshot;
+}
+
+void Timer::restoreSnapshot(TimerSnapshot* timerSnapshot){
+    dividerRegister = timerSnapshot->dividerRegister;
+    prevBit = timerSnapshot->prevBit;
+    timerCounter = timerSnapshot->timerCounter;
+    overflow = timerSnapshot->overflow;
+    timerModulo = timerSnapshot->timerModulo;
+    timerControl = timerSnapshot->timerControl;
 }

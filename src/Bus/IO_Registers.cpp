@@ -1,5 +1,11 @@
 #include "IO_Registers.h"
 
+IO_Registers_Snapshot::IO_Registers_Snapshot(std::vector<uint8_t> registersState){
+    registers = registersState;
+}
+
+
+
 std::unordered_map<uint8_t, uint8_t> IO_Registers::initialValues = {
     {0x00, 0xCF}, {0x01, 0x00}, {0x02, 0x7E}, {0x04, 0x18}, {0x05, 0x00},
     {0x06, 0x00}, {0x07, 0xF8}, {0x0F, 0xE1}, {0x10, 0x80}, {0x11, 0xBF},
@@ -38,4 +44,13 @@ void IO_Registers::write(uint16_t address, uint8_t value){
     }else{
         registers[address] = value;
     }
+}
+
+IO_Registers_Snapshot IO_Registers::createSnapshot(){
+    IO_Registers_Snapshot io_registers_snapshot(registers);
+    return io_registers_snapshot;
+}
+
+void IO_Registers::restoreSnapshot(IO_Registers_Snapshot* snapshot){
+    registers = snapshot->registers;
 }

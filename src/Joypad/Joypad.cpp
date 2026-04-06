@@ -1,5 +1,22 @@
 #include "Joypad.h"
 
+JoypadSnapshot::JoypadSnapshot(uint8_t JOYP_state, uint8_t buttons_state){
+    JOYP = JOYP_state;
+    buttons = buttons_state;
+}
+
+
+
+JoypadSnapshot Joypad::create_Joypad_Snapshot(){
+    JoypadSnapshot joypad_snapshot(JOYP, buttons);
+    return joypad_snapshot;
+}
+
+void Joypad::restore_Joypad_Snapshot(JoypadSnapshot* joypad_snapshot){
+    JOYP = joypad_snapshot->JOYP;
+    buttons = joypad_snapshot->buttons;
+}
+
 void Joypad::handleButton(SDL_Event& event, uint8_t bit){
     if(event.type == SDL_KEYDOWN){
         buttons &= ~(1 << bit);

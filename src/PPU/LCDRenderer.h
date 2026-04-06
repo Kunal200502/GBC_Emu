@@ -4,8 +4,24 @@
 #include <iostream>
 #include <chrono>
 
-const uint8_t width = 160;
-const uint8_t height = 144;
+class LCD_Renderer_Snapshot{
+    public:
+        uint8_t width;
+        uint8_t height;
+        uint8_t pixelBuffer[160*144];
+        uint32_t pixelBufferPointer;
+
+        LCD_Renderer_Snapshot(uint8_t, uint8_t, uint32_t[], uint32_t);
+        LCD_Renderer_Snapshot(){}
+        
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & width;
+            ar & height;
+            ar & pixelBufferPointer;
+            ar & pixelBuffer;
+        }
+};
 
 class LCD_Renderer{
     std::chrono::steady_clock::time_point clock;
@@ -22,4 +38,7 @@ class LCD_Renderer{
     public:
         LCD_Renderer(uint8_t, uint8_t, uint8_t);
         void pushPixel(uint8_t);
+        LCD_Renderer_Snapshot create_LCD_Renderer_Snapshot();
+        void restore_LCD_Renderer_Snapshot(LCD_Renderer_Snapshot*);
+        
 };

@@ -4,11 +4,16 @@
 #include "../Timer/Timer.h"
 #include "../Cartridge/Cartridge.h"
 #include "../PPU/PPU.h"
+#include "SaveState.h"
 #include <iostream>
 #include <memory>
 #include <fstream>
+#include <string>
 
 class GameBoy{
+    private:
+        void restoreSaveState(SaveState&);
+        std::string cartString;
     public:
         Cpu* cpu;
         Bus* bus;

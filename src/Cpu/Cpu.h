@@ -5,9 +5,51 @@
 
 #include "../Bus/Bus.h"
 
+class CpuSnapshot{
+    public: 
+        bool halted;
+
+        // registers
+        uint8_t A;
+        uint8_t B;
+        uint8_t C;
+        uint8_t D;
+        uint8_t E;
+        uint8_t H;
+        uint8_t L;
+        uint16_t SP;
+        uint16_t PC;
+        uint8_t F;
+
+        bool IME = false;
+        bool EI_pending = false;
+
+        uint32_t clock;
+
+        CpuSnapshot(uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint8_t, uint16_t, uint16_t, uint8_t, bool, bool, uint32_t);
+        CpuSnapshot(){}
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & A;
+            ar & B;
+            ar & C;
+            ar & D;
+            ar & E;
+            ar & H;
+            ar & L;
+            ar & SP;
+            ar & PC;
+            ar & F;
+            ar & IME;
+            ar & EI_pending;
+            ar & clock;
+        }
+};
+
 class Cpu{
     bool halted = false;
-    uint8_t i = 0;
+    
     // constants
     const uint32_t CLOCK_FREQUENCY = 4194304; 
     const uint32_t DIV_REGISTER_FREQUENCY = 16384;
@@ -104,4 +146,6 @@ class Cpu{
     public:
         void connectBus(Bus* bus);
         uint8_t emulateCycle();
+        CpuSnapshot create_CPU_snapshot();
+        void restore_CPU_snapshot(CpuSnapshot*);
 };

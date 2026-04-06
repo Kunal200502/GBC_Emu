@@ -16,6 +16,43 @@ enum InterruptType{
     Joypad_Interrupt
 };
 
+class BusSnapshot{
+    public:
+        std::vector<uint8_t> vram;
+        std::vector<uint8_t> wram;
+        std::vector<uint8_t> hram;
+
+        IO_Registers_Snapshot io_registers;
+        std::vector<uint8_t> OAM_memory;
+        uint8_t IE_Register;
+        uint8_t IF_Register;
+
+        JoypadSnapshot joypad;
+        TimerSnapshot timer;
+
+        bool start_DMA_transfer;
+        uint8_t OAM_DMA_pointer;
+
+        BusSnapshot(std::vector<uint8_t>, std::vector<uint8_t>, std::vector<uint8_t>, IO_Registers*, std::vector<uint8_t>, uint8_t, uint8_t, Joypad, Timer, bool, uint8_t);
+        BusSnapshot(){}
+
+        template<class Archive>
+        void serialize(Archive & ar, const unsigned int version){
+            ar & vram;
+            ar & wram;
+            ar & hram;
+            ar & io_registers;
+            ar & OAM_memory;
+            ar & IE_Register;
+            ar & IF_Register;
+            ar & joypad;
+            ar & timer;
+            ar & start_DMA_transfer;
+            ar & OAM_DMA_pointer;
+        }
+        
+};
+
 class Bus{
     private:
         std::unique_ptr<Cartridge> cartridge ; // 0x0000 - 0x7FFF
@@ -42,4 +79,7 @@ class Bus{
         void connectCartridge(std::string);
         void stepTimer(uint8_t);
         void processJoyPadInput(SDL_Event&);
+
+        BusSnapshot createSnapshot();
+        void restoreSnapshot(BusSnapshot*);
 };
