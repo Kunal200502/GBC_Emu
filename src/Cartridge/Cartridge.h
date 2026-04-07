@@ -12,6 +12,8 @@ class Cartridge{
         std::vector<uint8_t> rom;
         std::vector<uint8_t> ram;
         void loadROM(std::string);
+        void initializeRAM(uint8_t);
+
         virtual uint8_t read(uint16_t) const;
         virtual void write(uint16_t, uint8_t);
 };
@@ -29,12 +31,13 @@ class MBC1: public Cartridge{
 
         uint8_t rom_bank_low5 = 1;
         uint8_t bank_high2;
+        bool is_bank_high_ram;
 
         uint8_t ram_bank_number;
         bool banking_mode;
 
     public:
-        MBC1();
+        MBC1(uint8_t = 0);
         uint8_t read(uint16_t) const override;
         void write(uint16_t, uint8_t) override;
 };

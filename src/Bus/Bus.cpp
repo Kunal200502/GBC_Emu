@@ -44,6 +44,8 @@ void Bus::connectCartridge(std::string fileString){
     romFile.read(buffer, 0x14F);
 
     uint8_t Cartridge_type = buffer[0x147];
+    uint8_t ram_code = buffer[0x149];
+    uint8_t rom_code = buffer[0x148];
 
     romFile.close();
 
@@ -61,35 +63,36 @@ void Bus::connectCartridge(std::string fileString){
     }
 
     cartridge->loadROM(fileString);
+    cartridge->initializeRAM(ram_code);
 }
 
 uint8_t Bus::read(uint16_t address) const{
-    switch(address & 0xF000){
+    switch(address >> 12){
         // Reading from the Cartridge ROM
-        case 0x0000: { return cartridge->read(address); }
-        case 0x1000: { return cartridge->read(address); }
-        case 0x2000: { return cartridge->read(address); }
-        case 0x3000: { return cartridge->read(address); }
-        case 0x4000: { return cartridge->read(address); }
-        case 0x5000: { return cartridge->read(address); }
-        case 0x6000: { return cartridge->read(address); }
-        case 0x7000: { return cartridge->read(address); }
+        case 0x0: { return cartridge->read(address); }
+        case 0x1: { return cartridge->read(address); }
+        case 0x2: { return cartridge->read(address); }
+        case 0x3: { return cartridge->read(address); }
+        case 0x4: { return cartridge->read(address); }
+        case 0x5: { return cartridge->read(address); }
+        case 0x6: { return cartridge->read(address); }
+        case 0x7: { return cartridge->read(address); }
 
         // Reading from the VRAM
-        case 0x8000: { return vram[address - 0x8000]; }
-        case 0x9000: { return vram[address - 0x8000]; }
+        case 0x8: { return vram[address - 0x8000]; }
+        case 0x9: { return vram[address - 0x8000]; }
 
         // Reading from the Cartridge RAM
-        case 0xA000: { return cartridge->read(address); }
-        case 0xB000: { return cartridge->read(address); }
+        case 0xA: { return cartridge->read(address); }
+        case 0xB: { return cartridge->read(address); }
 
         // Reading from the WRAM
-        case 0xC000: { return wram[address - 0xC000]; }
-        case 0xD000: { return wram[address - 0xC000]; }
+        case 0xC: { return wram[address - 0xC000]; }
+        case 0xD: { return wram[address - 0xC000]; }
 
         // Reading from the Echo RAM
-        case 0xE000: { return wram[address & 0x1FFF];}
-        case 0xF000: {
+        case 0xE: { return wram[address & 0x1FFF];}
+        case 0xF: {
             // Reading from the Echo RAM
             if(address <= 0xFDFF){
                 return wram[address & 0x1FFF];
@@ -149,33 +152,33 @@ uint16_t Bus::read16(uint16_t address) const{
 }
 
 void Bus::write(uint16_t address, uint8_t value){
-    switch(address & 0xF000){
+    switch(address >> 12){
         // writing to the cartridge ROM
-        case 0x0000: { cartridge->write(address, value); return; }
-        case 0x1000: { cartridge->write(address, value); return; }
-        case 0x2000: { cartridge->write(address, value); return; }
-        case 0x3000: { cartridge->write(address, value); return; }
-        case 0x4000: { cartridge->write(address, value); return; }
-        case 0x5000: { cartridge->write(address, value); return; }
-        case 0x6000: { cartridge->write(address, value); return; }
-        case 0x7000: { cartridge->write(address, value); return; }
+        case 0x0: { cartridge->write(address, value); return; }
+        case 0x1: { cartridge->write(address, value); return; }
+        case 0x2: { cartridge->write(address, value); return; }
+        case 0x3: { cartridge->write(address, value); return; }
+        case 0x4: { cartridge->write(address, value); return; }
+        case 0x5: { cartridge->write(address, value); return; }
+        case 0x6: { cartridge->write(address, value); return; }
+        case 0x7: { cartridge->write(address, value); return; }
 
         // Writing to the VRAM
-        case 0x8000: { vram[address - 0x8000] = value; return; }
-        case 0x9000: { vram[address - 0x8000] = value; return; }
+        case 0x8: { vram[address - 0x8000] = value; return; }
+        case 0x9: { vram[address - 0x8000] = value; return; }
 
         // Writing to the cartridge RAM
-        case 0xA000: { cartridge->write(address, value); return; }
-        case 0xB000: { cartridge->write(address, value); return; }
+        case 0xA: { cartridge->write(address, value); return; }
+        case 0xB: { cartridge->write(address, value); return; }
 
         // Writing to the WRAM
-        case 0xC000: { wram[address - 0xC000] = value; return; }
-        case 0xD000: { wram[address - 0xC000] = value; return; }
+        case 0xC: { wram[address - 0xC000] = value; return; }
+        case 0xD: { wram[address - 0xC000] = value; return; }
 
         // Writing to the ECHO RAM
-        case 0xE000: { wram[address & 0x1FFF] = value; return; }
+        case 0xE: { wram[address & 0x1FFF] = value; return; }
 
-        case 0xF000: {
+        case 0xF: {
             // Writing to the ECHO RAM
             if(address <= 0xFDFF){
                 wram[address & 0x1FFF] = value;
