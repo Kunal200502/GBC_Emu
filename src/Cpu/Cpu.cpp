@@ -25,50 +25,46 @@ CpuSnapshot::CpuSnapshot(
 // flag helper methods;
 // zero flag (Z)
 bool Cpu::getZ(){
-    return (F & 0x80) != 0;
+    return Z_flag;
 }
 void Cpu::setZ(bool z){
-    if(z){
-        F |= 0x80;
-    }else{
-        F &= 0x7F;
-    }
+    Z_flag = z;
 }
 
 // Subtraction Flag (N)
 bool Cpu::getN(){
-    return (F & 0x40) != 0;
+    return N_flag;
 }
 void Cpu::setN(bool n){
-    if(n){
-        F |= 0x40;
-    }else{
-        F &= 0xBF;
-    }
+    N_flag = n;
 }
 
 // Half Carry FLag (H)
 bool Cpu::getH(){
-    return (F & 0x20) != 0;
+    return H_flag;
 }
 void Cpu::setH(bool n){
-    if(n){
-        F |= 0x20;
-    }else{
-        F &= 0xDF;
-    }
+    H_flag = n;
 }
 
 // carry flag (C)
 bool Cpu::getC(){
-    return (F & 0x10) != 0;
+    return C_flag;
 }
 void Cpu::setC(bool n){
-    if(n){
-        F |= 0x10;
-    }else{
-        F &= 0xEF;
-    }
+    C_flag = n;
+}
+
+uint8_t Cpu::getF(){
+    uint8_t F_register = (Z_flag << 7) | (N_flag << 6) | (H_flag << 5) | (C_flag << 4);
+    return F_register;
+}
+
+void Cpu::setF(uint8_t F_register){
+    Z_flag = (F_register >> 7) & 1;
+    N_flag = (F_register >> 6) & 1;
+    H_flag = (F_register >> 5) & 1;
+    C_flag = (F_register >> 4) & 1;
 }
 
 void Cpu::stackPush16(uint16_t value){
@@ -393,7 +389,7 @@ void Cpu::clearIFBit(uint8_t bit){
 }
 
 CpuSnapshot Cpu::create_CPU_snapshot(){
-    CpuSnapshot cpu_snapshot(A, B, C, D, E, H, L, SP, PC, F, IME, EI_pending, clock);
+    CpuSnapshot cpu_snapshot(A, B, C, D, E, H, L, SP, PC, getF(), IME, EI_pending, clock);
     return cpu_snapshot;
 }
 
@@ -406,7 +402,7 @@ void Cpu::restore_CPU_snapshot(CpuSnapshot* cpu_snapshot){
     E = cpu_snapshot->E;
     H = cpu_snapshot->H;
     L = cpu_snapshot->L;
-    F = cpu_snapshot->F;
+    setF(cpu_snapshot->F);
 
     SP = cpu_snapshot->SP; // stack pointer
     PC = cpu_snapshot->PC; // program counter
@@ -578,11 +574,11 @@ uint8_t Cpu::emulateCycle(){
         case 0xC5: {stackPush16(B, C); break;}// PUSH BC
         case 0xD5: {stackPush16(D, E); break;} // PUSH DE
         case 0xE5: {stackPush16(H, L); break;} // PUSH HL
-        case 0xF5: {stackPush16(A, F); break;} // PUSH AF
+        case 0xF5: {stackPush16(A, getF()); break;} // PUSH AF
         case 0xC1: {C = stackPop8(); B = stackPop8(); break;} // POP BC
         case 0xD1: {E = stackPop8(); D = stackPop8(); break;} // POP DE
         case 0xE1: {L = stackPop8(); H = stackPop8(); break;} // POP HL
-        case 0xF1: {F = stackPop8() & 0xF0; A = stackPop8(); break;} // POP AF  
+        case 0xF1: {setF(stackPop8()); A = stackPop8(); break;} // POP AF  
 
         case 0xF8: {
             int8_t offset = bus->read(PC++);

@@ -74,17 +74,24 @@ class Cpu{
     Bus* bus;
 
     // flag helper methods
+    bool Z_flag = true;
     bool getZ();
     void setZ(bool);
 
+    bool N_flag = false;
     bool getN();
     void setN(bool);
 
+    bool H_flag = true;
     bool getH();
     void setH(bool);
 
+    bool C_flag = true;
     bool getC();
     void setC(bool);
+
+    uint8_t getF();
+    void setF(uint8_t);
 
     void stackPush16(uint16_t);
     void stackPush16(uint8_t high, uint8_t low);
