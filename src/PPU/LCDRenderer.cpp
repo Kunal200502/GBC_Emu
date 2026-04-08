@@ -46,7 +46,7 @@ LCD_Renderer::LCD_Renderer(uint8_t w, uint8_t h, uint8_t scale){
 
 
 void LCD_Renderer::pushPixel(uint8_t pixel){
-    pixelBuffer[pixelBufferPointer] = pixelMapper[pixel & 0x3];
+    pixelBuffer[pixelBufferPointer] = pixelMapper[pixel];
     pixelBufferPointer++;
     if(pixelBufferPointer == width*height){
         std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();

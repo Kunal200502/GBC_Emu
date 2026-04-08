@@ -4,7 +4,8 @@
 
 BusSnapshot::BusSnapshot(std::vector<uint8_t> vram_state, std::vector<uint8_t> wram_state, std::vector<uint8_t> hram_state, 
     IO_Registers* io_registers_state,  std::vector<uint8_t> OAM_memory_state, uint8_t IE_Register_state, uint8_t IF_Register_state, 
-    Joypad joypad_state, Timer timer_state, bool start_DMA_transfer_state, uint8_t OAM_DMA_pointer_state){
+    Joypad joypad_state, Timer timer_state, bool start_DMA_transfer_state, uint8_t OAM_DMA_pointer_state,
+    CartridgeSnapshot& cartridge_state){
         vram = vram_state;
         wram = wram_state;
         hram = hram_state;
@@ -16,6 +17,7 @@ BusSnapshot::BusSnapshot(std::vector<uint8_t> vram_state, std::vector<uint8_t> w
         timer = timer_state.createSnapshot();
         start_DMA_transfer = start_DMA_transfer_state;
         OAM_DMA_pointer = OAM_DMA_pointer_state;
+        cartridge = cartridge_state;
 }
 
 Bus::Bus(){
@@ -53,11 +55,13 @@ void Bus::connectCartridge(std::string fileString){
         cartridge =  std::make_unique<NoMBC>();
     }else if(Cartridge_type >= 0x01 && Cartridge_type <= 0x03){
         cartridge = std::make_unique<MBC1>();
-    }else if(Cartridge_type >= 0x0F && Cartridge_type <= 0x13){
-        cartridge = std::make_unique<MBC5>();
-    }else if(Cartridge_type >= 0x19 && Cartridge_type <= 0x1E){
-        cartridge = std::make_unique<MBC5>();
-    }else{
+    }
+    // else if(Cartridge_type >= 0x0F && Cartridge_type <= 0x13){
+    //     cartridge = std::make_unique<MBC5>();
+    // }else if(Cartridge_type >= 0x19 && Cartridge_type <= 0x1E){
+    //     cartridge = std::make_unique<MBC5>();
+    // }
+    else{
         std::cout << "Cartridge Not Implemented" << std::endl;
         exit(1);
     }
@@ -269,8 +273,9 @@ void Bus::processJoyPadInput(SDL_Event& event){
 }
 
 BusSnapshot Bus::createSnapshot(){
+    CartridgeSnapshot snapshot = cartridge->createSnapshot();
     BusSnapshot bus_snapshot(vram, wram, hram, io_registers, OAM_memory, IE_Register, IF_Register, joypad, timer, 
-    start_DMA_transfer, OAM_DMA_pointer);
+    start_DMA_transfer, OAM_DMA_pointer, snapshot);
     return bus_snapshot;
 }
 

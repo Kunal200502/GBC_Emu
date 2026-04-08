@@ -272,8 +272,6 @@ void PPU::spriteFetcher(uint8_t objectNum){
         uint8_t pixel = (((tileHigh >> i) & 1) << 1)| ((tileLow >> i) & 1);
         spriteFIFOPixel.push(pixel);
     }
-
-    fetchingSprite = false;
 }
 
 void PPU::emulateCycle(){
@@ -292,10 +290,6 @@ void PPU::emulateCycle(){
             clock_sync--;
 
             if(oam_buffer->check(pixelCol)){
-                fetchingSprite = true;
-            }
-
-            if(fetchingSprite){
                 spriteFetcher(oam_buffer->pop().first);
             }
 

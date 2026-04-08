@@ -29,11 +29,12 @@ class BusSnapshot{
 
         JoypadSnapshot joypad;
         TimerSnapshot timer;
+        CartridgeSnapshot cartridge;
 
         bool start_DMA_transfer;
         uint8_t OAM_DMA_pointer;
 
-        BusSnapshot(std::vector<uint8_t>, std::vector<uint8_t>, std::vector<uint8_t>, IO_Registers*, std::vector<uint8_t>, uint8_t, uint8_t, Joypad, Timer, bool, uint8_t);
+        BusSnapshot(std::vector<uint8_t>, std::vector<uint8_t>, std::vector<uint8_t>, IO_Registers*, std::vector<uint8_t>, uint8_t, uint8_t, Joypad, Timer, bool, uint8_t, CartridgeSnapshot&);
         BusSnapshot(){}
 
         template<class Archive>

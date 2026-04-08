@@ -1,5 +1,15 @@
 #include "Cartridge.h"
 
+CartridgeSnapshot::CartridgeSnapshot(
+    std::vector<uint8_t> ram_state, 
+    std::vector<bool> bool_arr_state,
+    std::vector<uint8_t> uint8_arr_state
+){
+    ram = ram_state;
+    bool_arr = bool_arr_state;
+    uint8_arr = uint8_arr_state;
+}
+
 uint8_t Cartridge::read(uint16_t address) const{
     return rom[address];
 }
@@ -44,6 +54,7 @@ void Cartridge::initializeRAM(uint8_t code){
     }
 }
 
+
 // NoMBC class
 NoMBC::NoMBC(){}
 
@@ -55,9 +66,17 @@ void NoMBC::write(uint16_t address, uint8_t value){
     return;
 }
 
+CartridgeSnapshot NoMBC::createSnapshot(){
+    return CartridgeSnapshot();
+}
+
+void NoMBC::restoreSnapshot(CartridgeSnapshot&){
+    return;
+}
+
 // MBC1 class
 MBC1::MBC1(uint8_t rom_code){
-    is_bank_high_ram = (rom_code >= 0x5);
+    is_bank_high_ram = (rom_code < 0x5);
 }
 
 uint8_t MBC1::read(uint16_t address) const{
@@ -73,8 +92,8 @@ uint8_t MBC1::read(uint16_t address) const{
             if(!ram_enabled){
                 return 0xFF;
             }
-            if(is_bank_high_ram){
-                return ram[(address - 0xA000) + 0x2000*ram_bank_number];
+            if(!is_bank_high_ram){
+                return ram[(address - 0xA000) + 0x2000*bank_high2];
             }
             return ram[address - 0xA000];
         }
@@ -111,7 +130,11 @@ void MBC1::write(uint16_t address, uint8_t value){
             if(!ram_enabled){
                 return;
             }
-            ram[(address-0xA000) + 0x2000*bank_high2] = value;
+            if(is_bank_high_ram){
+                ram[(address-0xA000) + 0x2000*bank_high2] = value;
+            }else{
+                ram[address-0xA000] = value;
+            }
             return;
         }
         default: {
@@ -122,97 +145,115 @@ void MBC1::write(uint16_t address, uint8_t value){
 }
 
 
+CartridgeSnapshot MBC1::createSnapshot(){
+    std::vector<bool> bool_map = {ram_enabled, is_bank_high_ram, banking_mode};
+    std::vector<uint8_t> arr_map = {rom_bank_low5, bank_high2};
+
+    return CartridgeSnapshot(ram, bool_map, arr_map);
+}
+
+void MBC1::restoreSnapshot(CartridgeSnapshot& snapshot){
+    ram = snapshot.ram;
+    
+    ram_enabled = snapshot.bool_arr[0];
+    is_bank_high_ram = snapshot.bool_arr[1];
+    banking_mode = snapshot.bool_arr[2];
+
+    rom_bank_low5 = snapshot.uint8_arr[0];
+    bank_high2 = snapshot.uint8_arr[1];
+}
+
 // MBC3 class
-MBC3::MBC3(){
-}
+// MBC3::MBC3(){
+// }
 
-uint8_t MBC3::read(uint16_t address) const{
-    // ROM Bank 00
-    if(address <= 0x3FFF){
-        return rom[address];
-    }
+// uint8_t MBC3::read(uint16_t address) const{
+//     // ROM Bank 00
+//     if(address <= 0x3FFF){
+//         return rom[address];
+//     }
 
-    // ROM Bank 01-7F
-    if(address <= 0x7FFF){
-        return rom[(address - 0x4000) + rom_bank_num*0x4000];
-    }
+//     // ROM Bank 01-7F
+//     if(address <= 0x7FFF){
+//         return rom[(address - 0x4000) + rom_bank_num*0x4000];
+//     }
 
-    // RAM bank or RTC Register
-    if(address >= 0xA000 && address <= 0xBFFF){
-        // TODO - setup rtc
-        return rom[(address - 0x4000) + ram_rtc_selecter*0x2000];
-    }
+//     // RAM bank or RTC Register
+//     if(address >= 0xA000 && address <= 0xBFFF){
+//         // TODO - setup rtc
+//         return rom[(address - 0x4000) + ram_rtc_selecter*0x2000];
+//     }
 
-    std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
-    exit(1);
-}
+//     std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
+//     exit(1);
+// }
 
-void MBC3::write(uint16_t address, uint8_t value){
-    // RAM and Timer enable
-    if(address <= 0x1FFF){
-        if(value && 0xF == 0xA){
-            ram_enable = true;
-        }else if(value == 0){
-            ram_enable = false;
-        }
-        return;
-    }
+// void MBC3::write(uint16_t address, uint8_t value){
+//     // RAM and Timer enable
+//     if(address <= 0x1FFF){
+//         if(value && 0xF == 0xA){
+//             ram_enable = true;
+//         }else if(value == 0){
+//             ram_enable = false;
+//         }
+//         return;
+//     }
 
-    // ROM Bank Number
-    if(address <= 0x3FFF){
-        rom_bank_num = value & 0x7F;
-        return;
-    }
+//     // ROM Bank Number
+//     if(address <= 0x3FFF){
+//         rom_bank_num = value & 0x7F;
+//         return;
+//     }
 
-    // RAM Bank Number - or - RTC Register Select
-    if(address <= 0x5FFF){
-        ram_rtc_selecter = value;
-    }
+//     // RAM Bank Number - or - RTC Register Select
+//     if(address <= 0x5FFF){
+//         ram_rtc_selecter = value;
+//     }
 
-    // Latch Clock Data
-    if(address <= 0x7FFF){
-        // TODO
-        return;
-    }
-}
+//     // Latch Clock Data
+//     if(address <= 0x7FFF){
+//         // TODO
+//         return;
+//     }
+// }
 
 
-MBC5::MBC5(){
-}
+// MBC5::MBC5(){
+// }
 
-uint8_t MBC5::read(uint16_t address) const{
-    switch(address & 0xF000){
-        case 0x0000: { return rom[address]; }
-        case 0x1000: { return rom[address]; }
-        case 0x2000: { return rom[address]; }
-        case 0x3000: { return rom[address]; }
-        case 0x4000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
-        case 0x5000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
-        case 0x6000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
-        case 0x7000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
-        case 0xA000: { return ram[(address - 0xA000) + 0x2000*ram_bank_num]; }
-        case 0xB000: { return ram[(address - 0xA000) + 0x2000*ram_bank_num]; }
-        default: {
-            std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
-            exit(1);
-        }
-    }
+// uint8_t MBC5::read(uint16_t address) const{
+//     switch(address & 0xF000){
+//         case 0x0000: { return rom[address]; }
+//         case 0x1000: { return rom[address]; }
+//         case 0x2000: { return rom[address]; }
+//         case 0x3000: { return rom[address]; }
+//         case 0x4000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
+//         case 0x5000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
+//         case 0x6000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
+//         case 0x7000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
+//         case 0xA000: { return ram[(address - 0xA000) + 0x2000*ram_bank_num]; }
+//         case 0xB000: { return ram[(address - 0xA000) + 0x2000*ram_bank_num]; }
+//         default: {
+//             std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
+//             exit(1);
+//         }
+//     }
 
-}
+// }
 
-void MBC5::write(uint16_t address, uint8_t value){
-    switch(address & 0xF000){
-        case 0x0000: { return; }
-        case 0x1000: { return; }
-        case 0x2000: { rom_bank_low = value; return; }
-        case 0x3000: { rom_bank_high = (value & 1); return; }
-        case 0x4000: { ram_bank_num = value & 0xF; return; }
-        case 0x5000: { ram_bank_num = value & 0xF; return; }
+// void MBC5::write(uint16_t address, uint8_t value){
+//     switch(address & 0xF000){
+//         case 0x0000: { return; }
+//         case 0x1000: { return; }
+//         case 0x2000: { rom_bank_low = value; return; }
+//         case 0x3000: { rom_bank_high = (value & 1); return; }
+//         case 0x4000: { ram_bank_num = value & 0xF; return; }
+//         case 0x5000: { ram_bank_num = value & 0xF; return; }
 
-        case 0xA000: { ram[(address-0xA000) + 0x2000*ram_bank_num] = value; return; }
-        case 0xB000: { ram[(address-0xA000) + 0x2000*ram_bank_num] = value; return; }
-    }
-}
+//         case 0xA000: { ram[(address-0xA000) + 0x2000*ram_bank_num] = value; return; }
+//         case 0xB000: { ram[(address-0xA000) + 0x2000*ram_bank_num] = value; return; }
+//     }
+// }
 
 
 // MBC2 
