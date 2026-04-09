@@ -14,6 +14,7 @@ class GameBoy{
     private:
         void restoreSaveState(SaveState&);
         std::string cartString;
+        int counter = 0;
     public:
         Cpu* cpu;
         Bus* bus;

@@ -83,25 +83,28 @@ class MBC1: public Cartridge{
 //         void write(uint16_t, uint8_t) override;
 // };
 
-// class MBC5: public Cartridge{
-//     private:
-//         uint8_t rom_bank_low = 1;
-//         uint8_t rom_bank_high = 0;
-//         uint8_t ram_bank_num = 0;
+class MBC5: public Cartridge{
+    private:
+        uint8_t rom_bank_low = 1;
+        uint8_t rom_bank_high = 0;
+        uint8_t ram_bank_num = 0;
 
-//         bool latch_clock_data = false;
+        bool latch_clock_data = false;
 
-//         // RTC Registers
-//         uint8_t RTC_S;
-//         uint8_t RTC_M;
-//         uint8_t RTC_H;
-//         uint8_t RTC_DL;
-//         uint8_t RTC_DH;
-//     public:
-//         MBC5();
-//         uint8_t read(uint16_t) const override;
-//         void write(uint16_t, uint8_t) override;
-// };
+        // RTC Registers
+        uint8_t RTC_S;
+        uint8_t RTC_M;
+        uint8_t RTC_H;
+        uint8_t RTC_DL;
+        uint8_t RTC_DH;
+    public:
+        MBC5();
+        uint8_t read(uint16_t) const override;
+        void write(uint16_t, uint8_t) override;
+
+        CartridgeSnapshot createSnapshot() override;
+        void restoreSnapshot(CartridgeSnapshot&) override;
+};
 
 // class MBC2: public Cartridge{
 //     private:

@@ -251,7 +251,6 @@ void PPU::spriteFetcher(uint8_t objectNum){
     uint8_t xPosition = bus->read(objAddress+1);
     uint8_t tileIndex = bus->read(objAddress+2);
     uint8_t objAttr = bus->read(objAddress+3);
-
     
     uint8_t lineInTile = getLY()-(yPosition-16);
     if(checkBit(objAttr, 6)){
@@ -270,12 +269,15 @@ void PPU::spriteFetcher(uint8_t objectNum){
 
     for(int i = 7; i >= 0; i--){
         uint8_t pixel = (((tileHigh >> i) & 1) << 1)| ((tileLow >> i) & 1);
-        spriteFIFOPixel.push(pixel);
+        if(pixel == 0){ 
+            spriteFIFOPixel.push(0xFF);
+        }else{
+            spriteFIFOPixel.push(pixel);
+        }
     }
 }
 
 void PPU::emulateCycle(){
-    
     switch(mode){
         case 2:{
             // OAM scan

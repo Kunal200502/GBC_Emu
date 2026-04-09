@@ -55,12 +55,11 @@ void Bus::connectCartridge(std::string fileString){
         cartridge =  std::make_unique<NoMBC>();
     }else if(Cartridge_type >= 0x01 && Cartridge_type <= 0x03){
         cartridge = std::make_unique<MBC1>();
+    }else if(Cartridge_type >= 0x0F && Cartridge_type <= 0x13){
+        cartridge = std::make_unique<MBC5>();
+    }else if(Cartridge_type >= 0x19 && Cartridge_type <= 0x1E){
+        cartridge = std::make_unique<MBC5>();
     }
-    // else if(Cartridge_type >= 0x0F && Cartridge_type <= 0x13){
-    //     cartridge = std::make_unique<MBC5>();
-    // }else if(Cartridge_type >= 0x19 && Cartridge_type <= 0x1E){
-    //     cartridge = std::make_unique<MBC5>();
-    // }
     else{
         std::cout << "Cartridge Not Implemented" << std::endl;
         exit(1);

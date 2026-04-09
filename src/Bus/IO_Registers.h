@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <vector>
 #include <unordered_map>
+#include <iostream>
 
 class IO_Registers_Snapshot{
     public:

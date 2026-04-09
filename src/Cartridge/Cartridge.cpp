@@ -218,42 +218,57 @@ void MBC1::restoreSnapshot(CartridgeSnapshot& snapshot){
 // }
 
 
-// MBC5::MBC5(){
-// }
+MBC5::MBC5(){
+}
 
-// uint8_t MBC5::read(uint16_t address) const{
-//     switch(address & 0xF000){
-//         case 0x0000: { return rom[address]; }
-//         case 0x1000: { return rom[address]; }
-//         case 0x2000: { return rom[address]; }
-//         case 0x3000: { return rom[address]; }
-//         case 0x4000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
-//         case 0x5000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
-//         case 0x6000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
-//         case 0x7000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
-//         case 0xA000: { return ram[(address - 0xA000) + 0x2000*ram_bank_num]; }
-//         case 0xB000: { return ram[(address - 0xA000) + 0x2000*ram_bank_num]; }
-//         default: {
-//             std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
-//             exit(1);
-//         }
-//     }
+uint8_t MBC5::read(uint16_t address) const{
+    switch(address & 0xF000){
+        case 0x0000: { return rom[address]; }
+        case 0x1000: { return rom[address]; }
+        case 0x2000: { return rom[address]; }
+        case 0x3000: { return rom[address]; }
+        case 0x4000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
+        case 0x5000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
+        case 0x6000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
+        case 0x7000: { return rom[((rom_bank_high << 8) | rom_bank_low)*0x4000 + (address - 0x4000)]; }
+        case 0xA000: { return ram[(address - 0xA000) + 0x2000*ram_bank_num]; }
+        case 0xB000: { return ram[(address - 0xA000) + 0x2000*ram_bank_num]; }
+        default: {
+            std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
+            exit(1);
+        }
+    }
 
-// }
+}
 
-// void MBC5::write(uint16_t address, uint8_t value){
-//     switch(address & 0xF000){
-//         case 0x0000: { return; }
-//         case 0x1000: { return; }
-//         case 0x2000: { rom_bank_low = value; return; }
-//         case 0x3000: { rom_bank_high = (value & 1); return; }
-//         case 0x4000: { ram_bank_num = value & 0xF; return; }
-//         case 0x5000: { ram_bank_num = value & 0xF; return; }
+void MBC5::write(uint16_t address, uint8_t value){
+    switch(address & 0xF000){
+        case 0x0000: { return; }
+        case 0x1000: { return; }
+        case 0x2000: { rom_bank_low = value; return; }
+        case 0x3000: { rom_bank_high = (value & 1); return; }
+        case 0x4000: { ram_bank_num = value & 0xF; return; }
+        case 0x5000: { ram_bank_num = value & 0xF; return; }
 
-//         case 0xA000: { ram[(address-0xA000) + 0x2000*ram_bank_num] = value; return; }
-//         case 0xB000: { ram[(address-0xA000) + 0x2000*ram_bank_num] = value; return; }
-//     }
-// }
+        case 0xA000: { ram[(address-0xA000) + 0x2000*ram_bank_num] = value; return; }
+        case 0xB000: { ram[(address-0xA000) + 0x2000*ram_bank_num] = value; return; }
+    }
+}
+
+CartridgeSnapshot MBC5::createSnapshot(){
+    std::vector<bool> bool_map = {latch_clock_data};
+    std::vector<uint8_t> arr_map = {rom_bank_low, rom_bank_high, ram_bank_num};
+
+    return CartridgeSnapshot(ram, bool_map, arr_map);
+}
+
+void MBC5::restoreSnapshot(CartridgeSnapshot& snapshot){
+    rom_bank_low = snapshot.uint8_arr[0];
+    rom_bank_high = snapshot.uint8_arr[1];
+    ram_bank_num = snapshot.uint8_arr[2];
+
+    latch_clock_data = snapshot.bool_arr[0];
+}
 
 
 // MBC2 

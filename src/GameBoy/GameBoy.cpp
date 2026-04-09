@@ -19,21 +19,25 @@ void GameBoy::startGameboy(std::string fileString){
     cartString = fileString;
 
     while(true){
-        while(SDL_PollEvent(&event)){
-            if(event.type == SDL_QUIT){
-                return;
-            }else if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_F1){
-                SaveState saveState(bus, cpu, ppu);
-                createSaveState(saveState);
-            }else if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_F2){
-                SaveState saveState = SaveState();
+        if(counter > 10){
+            counter = 0;
+            while(SDL_PollEvent(&event)){
+                if(event.type == SDL_QUIT){
+                    return;
+                }else if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_F1){
+                    SaveState saveState(bus, cpu, ppu);
+                    createSaveState(saveState);
+                }else if(event.type == SDL_KEYDOWN && event.key.keysym.sym == SDLK_F2){
+                    SaveState saveState = SaveState();
 
-                loadSaveState(saveState);
-                restoreSaveState(saveState);
+                    loadSaveState(saveState);
+                    restoreSaveState(saveState);
+                }
+                bus->processJoyPadInput(event);
             }
-            bus->processJoyPadInput(event);
         }
         int cycles = cpu->emulateCycle();
+        counter += cycles;
         bus->stepTimer(cycles);
 
         ppu->step(4*cycles);
