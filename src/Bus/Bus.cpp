@@ -51,18 +51,36 @@ void Bus::connectCartridge(std::string fileString){
 
     romFile.close();
 
-    if(Cartridge_type == 0x00){
-        cartridge =  std::make_unique<NoMBC>();
-    }else if(Cartridge_type >= 0x01 && Cartridge_type <= 0x03){
-        cartridge = std::make_unique<MBC1>();
-    }else if(Cartridge_type >= 0x0F && Cartridge_type <= 0x13){
-        cartridge = std::make_unique<MBC5>();
-    }else if(Cartridge_type >= 0x19 && Cartridge_type <= 0x1E){
-        cartridge = std::make_unique<MBC5>();
-    }
-    else{
-        std::cout << "Cartridge Not Implemented" << std::endl;
-        exit(1);
+    switch(Cartridge_type){
+        // NoMBC Cartridge
+        case 0x0: {
+            cartridge = std::make_unique<NoMBC>();
+            break;
+        }
+        // MBC1 Cartridge
+        case 0x01: case 0x02: case 0x03: {
+            cartridge = std::make_unique<MBC1>();
+            break;
+        }
+        // MBC2 Cartridge
+        case 0x05: case 0x06: {
+            cartridge = std::make_unique<MBC2>();
+            break;
+        }
+        // MBC3 Catridge
+        case 0x0F: case 0x10: case 0x11: case 0x12: case 0x13: {
+            cartridge = std::make_unique<MBC3>();
+            break;
+        }
+        // MBC5 Cartridge
+        case 0x19: case 0x1A: case 0x1B: case 0x1C: case 0x1D: case 0x1E: {
+            cartridge = std::make_unique<MBC5>();
+            break;
+        }
+        default: {
+            std::cout << "Cartridge Not Implemented" << std::endl;
+            exit(1);
+        }
     }
 
     cartridge->loadROM(fileString);

@@ -7,6 +7,7 @@
 #include <chrono>
 #include <string>
 #include <unordered_map>
+#include <chrono>
 
 class CartridgeSnapshot{
     public:
@@ -72,16 +73,39 @@ class MBC1: public Cartridge{
         void restoreSnapshot(CartridgeSnapshot&) override;
 };
 
-// class MBC3: public Cartridge{
-//     private:
-//         uint8_t rom_bank_num = 1;
-//         bool ram_enable = false;
-//         uint8_t ram_rtc_selecter = 0;
-//     public:
-//         MBC3();
-//         uint8_t read(uint16_t) const override;
-//         void write(uint16_t, uint8_t) override;
-// };
+class MBC2: public Cartridge{
+    private:
+        uint8_t rom_bank_num = 1;
+        bool ram_enable;
+    public:
+        MBC2(){}
+        uint8_t read(uint16_t) const override;
+        void write(uint16_t, uint8_t) override;
+
+        CartridgeSnapshot createSnapshot() override;
+        void restoreSnapshot(CartridgeSnapshot&) override;
+};
+
+class MBC3: public Cartridge{
+    private:
+        std::chrono::steady_clock::time_point clock;
+        bool ram_enable;
+        uint8_t rom_bank_num = 1;
+        uint8_t ram_rtc_register = 0;
+        uint8_t rtc_s;
+        uint8_t rtc_m;
+        uint8_t rtc_h;
+        uint8_t rtc_dl;
+        uint8_t rtc_dh;
+    public:
+        MBC3(){ clock = std::chrono::steady_clock::now(); }
+        uint8_t read(uint16_t) const override;
+        void write(uint16_t, uint8_t) override;
+
+        CartridgeSnapshot createSnapshot() override;
+        void restoreSnapshot(CartridgeSnapshot&) override;
+
+};
 
 class MBC5: public Cartridge{
     private:

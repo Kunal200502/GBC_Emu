@@ -14,7 +14,7 @@ class JoypadSnapshot{
         void serialize(Archive & ar, const unsigned int version){
             ar & JOYP;
             ar & buttons;
-}
+        }
 };
 
 class Joypad{

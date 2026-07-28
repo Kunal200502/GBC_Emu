@@ -81,7 +81,12 @@ MBC1::MBC1(uint8_t rom_code){
 
 uint8_t MBC1::read(uint16_t address) const{
     switch(address >> 12){
-        case 0x0: case 0x1: case 0x2: case 0x3: { return rom[address]; }
+        case 0x0: case 0x1: case 0x2: case 0x3: { 
+            if(is_bank_high_ram){
+                return rom[address];
+            }
+            return rom[address + 0x4000*(bank_high2 << 5)];
+         }
         case 0x4: case 0x5: case 0x6: case 0x7: { 
             if(is_bank_high_ram){
                 return rom[(address - 0x4000) + 0x4000*rom_bank_low5];
@@ -92,7 +97,7 @@ uint8_t MBC1::read(uint16_t address) const{
             if(!ram_enabled){
                 return 0xFF;
             }
-            if(!is_bank_high_ram){
+            if(is_bank_high_ram){
                 return ram[(address - 0xA000) + 0x2000*bank_high2];
             }
             return ram[address - 0xA000];
@@ -163,59 +168,175 @@ void MBC1::restoreSnapshot(CartridgeSnapshot& snapshot){
     bank_high2 = snapshot.uint8_arr[1];
 }
 
-// MBC3 class
-// MBC3::MBC3(){
-// }
 
-// uint8_t MBC3::read(uint16_t address) const{
-//     // ROM Bank 00
-//     if(address <= 0x3FFF){
-//         return rom[address];
-//     }
 
-//     // ROM Bank 01-7F
-//     if(address <= 0x7FFF){
-//         return rom[(address - 0x4000) + rom_bank_num*0x4000];
-//     }
+// MBC2 Class
+uint8_t MBC2::read(uint16_t address) const{
+    switch(address >> 12){
+        case 0x0: case 0x1: case 0x2: case 0x3: {
+            return rom[address];
+        }
+        case 0x4: case 0x5: case 0x6: case 0x7: {
+            return rom[(address - 0x4000) + rom_bank_num*0x4000];
+        }
+        case 0xA: case 0xB: {
+            if(!ram_enable){
+                return 0xFF;
+            }
+            return ram[address & 0x1FF] & 0xF;
+        }
+        default: {
+            std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
+            exit(1);
+        }
+    }
+}
 
-//     // RAM bank or RTC Register
-//     if(address >= 0xA000 && address <= 0xBFFF){
-//         // TODO - setup rtc
-//         return rom[(address - 0x4000) + ram_rtc_selecter*0x2000];
-//     }
+void MBC2::write(uint16_t address, uint8_t value){
+    switch(address >> 12){
+        case 0x0: case 0x1: case 0x2: case 0x3: {
+            // for selecting ROM bank number (0x0 - 0xF)
+            if((address >> 8) & 1){
+                rom_bank_num = value & 0xF;
+            }
+            // for enabling disablling RAM
+            else{
+                if((value & 0xF) == 0xA){
+                    ram_enable = true;
+                }else{
+                    ram_enable = false;
+                }
+            }
+        }
+        case 0xA: case 0xB: {
+            if(!ram_enable){
+                return;
+            }
+            ram[address & 0x1FF] = value;
+        }
+    }
+}
 
-//     std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
-//     exit(1);
-// }
+CartridgeSnapshot MBC2::createSnapshot(){
+    std::vector<bool> bool_map = {ram_enable};
+    std::vector<uint8_t> arr_map = {rom_bank_num};
 
-// void MBC3::write(uint16_t address, uint8_t value){
-//     // RAM and Timer enable
-//     if(address <= 0x1FFF){
-//         if(value && 0xF == 0xA){
-//             ram_enable = true;
-//         }else if(value == 0){
-//             ram_enable = false;
-//         }
-//         return;
-//     }
+    return CartridgeSnapshot(ram, bool_map, arr_map);
+}
 
-//     // ROM Bank Number
-//     if(address <= 0x3FFF){
-//         rom_bank_num = value & 0x7F;
-//         return;
-//     }
+void MBC2::restoreSnapshot(CartridgeSnapshot& snapshot){
+    ram_enable = snapshot.bool_arr[0];
+    rom_bank_num = snapshot.uint8_arr[0];
+}
 
-//     // RAM Bank Number - or - RTC Register Select
-//     if(address <= 0x5FFF){
-//         ram_rtc_selecter = value;
-//     }
+uint8_t MBC3::read(uint16_t address) const{
+    switch(address >> 12){
+        case 0x0: case 0x1: case 0x2: case 0x3: {
+            return rom[address];
+        }
+        case 0x4: case 0x5: case 0x6: case 0x7: {
+            return rom[(address - 0x4000) + 0x4000*rom_bank_num];
+        }
+        case 0xA: case 0xB: {
+            // reading from the RAM
+            if(ram_rtc_register <= 0x7){
+                if(!ram_enable){
+                    return 0xFF;
+                }
+                return ram[(address - 0xA000) + 0x2000*ram_rtc_register];
+            }
+            // reading from the RTC register
+            else{
+                switch(ram_rtc_register){
+                    case 0x8: { return rtc_s; }
+                    case 0x9: { return rtc_m; }
+                    case 0xA: { return rtc_h; }
+                    case 0xB: { return rtc_dl; }
+                    case 0xC: { return rtc_dh; }
+                }
+            }
+        }
+        default: {
+            std::cout << "Attempted to read from unknow location" << (int)address << std::endl;
+            exit(1);
+        }
+    }
+}
 
-//     // Latch Clock Data
-//     if(address <= 0x7FFF){
-//         // TODO
-//         return;
-//     }
-// }
+void MBC3::write(uint16_t address, uint8_t value){
+    switch(address >> 12){
+        case 0x0: case 0x1: {
+            if((value & 0xF) == 0xA){
+                ram_enable = true;
+            }else{
+                ram_enable = false;
+            }
+            break;
+        }
+        case 0x2: case 0x3: {
+            rom_bank_num = value;
+            break;
+        }
+        case 0x4: case 0x5: {
+            ram_rtc_register = value;
+            break;
+        }
+        case 0x6: case 0x7: {
+            std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+            uint64_t time = std::chrono::duration_cast<std::chrono::seconds>(end - clock).count();
+            uint8_t temp = rtc_s;
+            
+            // updating seconds
+            rtc_s = (temp + time)%60;
+            time = (temp + time)/60;
+
+            // updating minutes
+            temp = rtc_m;
+            rtc_m = (temp + time)%60;
+            time = (temp + time)/60;
+
+            // updating hours
+            temp = rtc_h;
+            rtc_h = (temp + time)%24;
+            time = (temp + time)/60;
+            
+            break;
+        }
+        case 0xA: case 0xB: {
+            if(ram_rtc_register < 0x7){
+                ram[(address - 0xA000) + 0x2000*ram_rtc_register] = value;
+            }else{
+                switch(ram_rtc_register){
+                    case 0x8: { rtc_s  = value; }
+                    case 0x9: { rtc_m  = value; }
+                    case 0xA: { rtc_h  = value; }
+                    case 0xB: { rtc_dl  = value; }
+                    case 0xC: { rtc_dh  = value; }
+                }
+            }
+            return;
+        }
+    }
+}
+
+CartridgeSnapshot MBC3::createSnapshot(){
+    std::vector<bool> bool_map = {ram_enable};
+    std::vector<uint8_t> arr_map = {rom_bank_num, ram_rtc_register, rtc_s, rtc_m, rtc_h, rtc_dl, rtc_dh};
+
+    return CartridgeSnapshot(ram, bool_map, arr_map);
+}
+
+void MBC3::restoreSnapshot(CartridgeSnapshot& snapshot){
+    ram_enable = snapshot.bool_arr[0];
+
+    uint8_t rom_bank_num = snapshot.uint8_arr[0];
+    uint8_t ram_rtc_register = snapshot.uint8_arr[1];
+    uint8_t rtc_s = snapshot.uint8_arr[2];
+    uint8_t rtc_m = snapshot.uint8_arr[3];
+    uint8_t rtc_h = snapshot.uint8_arr[4];
+    uint8_t rtc_dl = snapshot.uint8_arr[5];
+    uint8_t rtc_dh = snapshot.uint8_arr[6];
+}
 
 
 MBC5::MBC5(){
@@ -269,25 +390,3 @@ void MBC5::restoreSnapshot(CartridgeSnapshot& snapshot){
 
     latch_clock_data = snapshot.bool_arr[0];
 }
-
-
-// MBC2 
-// uint8_t MBC2::read(uint16_t address) const{
-//     // ROM Bank 00 [read-only]
-//     if(address >= 0x0000 && address <= 0x3FFF){
-//         return rom[address];
-//     }
-
-//     // ROM Bank 01-0F (same as MBC1 but only 16 banks are supported)
-//     // setting the bank to 1 if it is set to 0
-//     uint8_t bank = rom_bank_number;
-//     if(bank == 0){
-//         bank = 1;
-//     }
-
-//     // ROM BANK 01-7f [read-only switchable]
-//     if(address >= 0x4000 && address <= 0x7FFF){
-//         return rom[(address - 0x4000) + 0x4000*bank];
-//     }
-
-// }

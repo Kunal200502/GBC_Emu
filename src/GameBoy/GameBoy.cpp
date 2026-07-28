@@ -19,7 +19,7 @@ void GameBoy::startGameboy(std::string fileString){
     cartString = fileString;
 
     while(true){
-        if(counter > 10){
+        if(counter > 5){
             counter = 0;
             while(SDL_PollEvent(&event)){
                 if(event.type == SDL_QUIT){

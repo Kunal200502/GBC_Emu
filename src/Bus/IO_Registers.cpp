@@ -24,16 +24,13 @@ std::unordered_map<uint8_t, uint8_t> IO_Registers::openValues = {
 };
 
 IO_Registers::IO_Registers(){
-    registers = std::vector<uint8_t>(0x80, 0);
+    registers = std::vector<uint8_t>(0x80, 0xFF);
     for(auto it = initialValues.begin(); it != initialValues.end(); it++){
         registers[it->first] = it->second;
     }
 }
 
 uint8_t IO_Registers::read(uint16_t address){
-    if(initialValues.find(address) == initialValues.end()){
-        return 0xFF;
-    }
     return registers[address];
 }
 

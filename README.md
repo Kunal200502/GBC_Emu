@@ -1,5 +1,5 @@
-# GBC_Emu
-A GameBoy Color emulator in C++ <br/>
+# GB_Emu
+A GameBoy emulator in C++ <br/>
 Uses SDL2 library for rendering <br/>
 Passes all blargg's cpu tests <br/>
 Saving and loading functionality is very basic for now - only supports NoMBC games 
@@ -15,7 +15,7 @@ cmake --build .
 
 ### To Exectute-
 ```
-./GBC_emu path_to_rom_file
+./GB_emu path_to_rom_file
 ```
 
 ## Controls
